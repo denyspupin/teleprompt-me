@@ -9,11 +9,19 @@ struct LibraryView: View {
     @Query(sort: \ScriptDocument.updatedAt, order: .reverse) private var documents: [ScriptDocument]
     @State private var draftTitle = ""
     @State private var draftText = ""
+    @State private var hoveredAction: HoveredAction?
     @FocusState private var focusedEditor: EditorFocus?
 
     private enum EditorFocus: Hashable {
         case title
         case body
+    }
+
+    private enum HoveredAction: Hashable {
+        case favorite(String)
+        case activate(String)
+        case edit(String)
+        case delete(String)
     }
 
     var body: some View {
@@ -118,10 +126,25 @@ struct LibraryView: View {
 
                 Spacer()
 
-                Button("New Script") {
+                Button {
                     createDocumentAndOpen()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.06))
+
+                        Circle()
+                            .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.88))
+                    }
+                    .frame(width: 36, height: 36)
+                    .contentShape(Circle())
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+                .help("New Script")
             }
 
             if filteredDocuments.isEmpty {
@@ -134,44 +157,70 @@ struct LibraryView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(filteredDocuments) { document in
-                            Button {
-                                appState.selectedDocumentID = document.id
-                            } label: {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    HStack(alignment: .top) {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(document.title)
-                                                .font(.headline)
-                                                .foregroundStyle(.primary)
-                                                .lineLimit(1)
+                        ForEach(filteredDocuments, id: \.id) { document in
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(alignment: .top, spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(document.title)
+                                            .font(.headline)
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(1)
 
-                                            Text(document.plainText.isEmpty ? "Empty script" : document.plainText)
-                                                .font(.subheadline)
-                                                .foregroundStyle(.secondary)
-                                                .lineLimit(2)
+                                        Text(document.plainText.isEmpty ? "Empty script" : document.plainText)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
+                                    }
+
+                                    Spacer()
+
+                                    HStack(spacing: 8) {
+                                        quickActionButton(
+                                            id: .favorite(document.id),
+                                            systemImage: document.isFavorite ? "star.fill" : "star",
+                                            accessibilityLabel: document.isFavorite ? "Remove from favorites" : "Add to favorites"
+                                        ) {
+                                            toggleFavorite(for: document)
                                         }
 
-                                        Spacer()
+                                        quickActionButton(
+                                            id: .activate(document.id),
+                                            systemImage: "play.fill",
+                                            accessibilityLabel: "Show in teleprompter"
+                                        ) {
+                                            activate(document: document)
+                                        }
 
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.tertiary)
-                                    }
+                                        quickActionButton(
+                                            id: .edit(document.id),
+                                            systemImage: "pencil",
+                                            accessibilityLabel: "Edit script"
+                                        ) {
+                                            open(document: document)
+                                        }
 
-                                    HStack {
-                                        Text(relativeDate(for: document.updatedAt))
-                                        Spacer()
-                                        Text("\(wordCount(for: document.plainText)) words")
+                                        quickActionButton(
+                                            id: .delete(document.id),
+                                            systemImage: "trash",
+                                            accessibilityLabel: "Delete script"
+                                        ) {
+                                            delete(document: document)
+                                        }
                                     }
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
                                 }
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(contentCard)
+
+                                HStack {
+                                    Text(relativeDate(for: document.updatedAt))
+                                    Spacer()
+                                    Text("\(wordCount(for: document.plainText)) words")
+                                }
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                             }
-                            .buttonStyle(.plain)
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(contentCard)
                             .contextMenu {
                                 Button(role: .destructive) {
                                     delete(document: document)
@@ -375,6 +424,7 @@ struct LibraryView: View {
         modelContext.insert(newDocument)
         appState.selectedSidebarItem = .allScripts
         appState.selectedDocumentID = newDocument.id
+        appState.activateScript(id: newDocument.id, title: newDocument.title, text: newDocument.plainText)
         syncDraftFromSelection()
         try? modelContext.save()
     }
@@ -399,6 +449,11 @@ struct LibraryView: View {
         document.title = resolvedTitle
         document.plainText = draftText
         document.updatedAt = .now
+
+        if appState.activeScriptID == document.id {
+            appState.activateScript(id: document.id, title: resolvedTitle, text: draftText)
+        }
+
         try? modelContext.save()
     }
 
@@ -412,7 +467,59 @@ struct LibraryView: View {
             draftText = ""
         }
 
+        if appState.activeScriptID == deletedID {
+            appState.activeScriptID = nil
+            appState.activeScriptTitle = "No Active Script"
+            appState.activeScriptText = "Choose a script from the library to show it in the teleprompter overlay."
+        }
+
         try? modelContext.save()
+    }
+
+    private func open(document: ScriptDocument) {
+        appState.selectedDocumentID = document.id
+    }
+
+    private func activate(document: ScriptDocument) {
+        appState.activateScript(id: document.id, title: document.title, text: document.plainText)
+    }
+
+    private func toggleFavorite(for document: ScriptDocument) {
+        document.isFavorite.toggle()
+        try? modelContext.save()
+    }
+
+    private func quickActionButton(
+        id: HoveredAction,
+        systemImage: String,
+        accessibilityLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        let isHovered = hoveredAction == id
+
+        return Button(action: action) {
+            ZStack {
+                Circle()
+                    .fill(isHovered ? Color.accentColor.opacity(0.32) : Color.white.opacity(0.06))
+
+                Circle()
+                    .strokeBorder(isHovered ? Color.accentColor.opacity(0.75) : Color.white.opacity(0.08), lineWidth: 1)
+
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isHovered ? Color.white : Color.primary.opacity(0.88))
+            }
+            .frame(width: 30, height: 30)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isHovered ? 1.06 : 1)
+        .shadow(color: isHovered ? Color.accentColor.opacity(0.28) : .clear, radius: 8, y: 2)
+        .animation(.easeOut(duration: 0.14), value: isHovered)
+        .onHover { isHovering in
+            hoveredAction = isHovering ? id : (hoveredAction == id ? nil : hoveredAction)
+        }
+        .help(accessibilityLabel)
     }
 
     private func wordCount(for text: String) -> Int {

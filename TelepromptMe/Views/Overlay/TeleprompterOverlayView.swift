@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct TeleprompterOverlayView: View {
+    @Environment(AppState.self) private var appState
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("Overlay Preview", systemImage: "rectangle.topthird.inset.filled")
+                Label(appState.activeScriptTitle, systemImage: "rectangle.topthird.inset.filled")
                     .font(.headline)
                 Spacer()
                 Text("Interactive when paused")
@@ -12,10 +14,11 @@ struct TeleprompterOverlayView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text("This is the native overlay shell for TelepromptMe. In the next phase it will render the active script with live typography, auto-scroll, and manual stepping.")
+            Text(appState.activeScriptText)
                 .font(.system(size: 30, weight: .medium, design: .rounded))
                 .foregroundStyle(.primary)
                 .lineSpacing(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

@@ -14,9 +14,10 @@ final class OverlayWindowManager {
         }
     }
 
-    func present() {
+    func present(appState: AppState) {
         if window == nil {
             let contentView = TeleprompterOverlayView()
+                .environment(appState)
             let hostingController = NSHostingController(rootView: contentView)
 
             let panel = NSPanel(
@@ -50,11 +51,11 @@ final class OverlayWindowManager {
         window?.orderOut(nil)
     }
 
-    func toggle() {
+    func toggle(appState: AppState) {
         if isVisible {
             hide()
         } else {
-            present()
+            present(appState: appState)
         }
     }
 
