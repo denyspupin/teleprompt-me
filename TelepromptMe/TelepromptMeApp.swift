@@ -28,7 +28,7 @@ struct TelepromptMeApp: App {
                 .environment(appState)
         }
         .modelContainer(sharedModelContainer)
-        .defaultSize(width: 1100, height: 720)
+        .defaultSize(width: 980, height: 640)
         .commands {
             TelepromptMeCommands(appState: appState)
         }

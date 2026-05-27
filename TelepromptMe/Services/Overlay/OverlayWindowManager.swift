@@ -4,6 +4,10 @@ import SwiftUI
 @MainActor
 final class OverlayWindowManager {
     private var window: NSPanel?
+    var isVisible: Bool {
+        window?.isVisible ?? false
+    }
+
     var isInteractive: Bool = false {
         didSet {
             updateInteractivity()
@@ -40,6 +44,18 @@ final class OverlayWindowManager {
 
         updateInteractivity()
         window?.orderFrontRegardless()
+    }
+
+    func hide() {
+        window?.orderOut(nil)
+    }
+
+    func toggle() {
+        if isVisible {
+            hide()
+        } else {
+            present()
+        }
     }
 
     private func updateInteractivity() {
