@@ -172,6 +172,13 @@ struct LibraryView: View {
                                 .background(contentCard)
                             }
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    delete(document: document)
+                                } label: {
+                                    Label("Delete Script", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                 }
@@ -197,6 +204,13 @@ struct LibraryView: View {
                     }
                     .buttonStyle(.bordered)
                 }
+
+                Button(role: .destructive) {
+                    delete(document: document)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -385,6 +399,19 @@ struct LibraryView: View {
         document.title = resolvedTitle
         document.plainText = draftText
         document.updatedAt = .now
+        try? modelContext.save()
+    }
+
+    private func delete(document: ScriptDocument) {
+        let deletedID = document.id
+        modelContext.delete(document)
+
+        if appState.selectedDocumentID == deletedID {
+            appState.selectedDocumentID = nil
+            draftTitle = ""
+            draftText = ""
+        }
+
         try? modelContext.save()
     }
 
