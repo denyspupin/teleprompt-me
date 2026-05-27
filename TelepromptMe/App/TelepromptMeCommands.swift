@@ -15,12 +15,27 @@ struct TelepromptMeCommands: Commands {
             }
             .keyboardShortcut(".", modifiers: [.command])
 
+            Button("Restart From Top") {
+                appState.restartPlayback()
+            }
+            .keyboardShortcut(.return, modifiers: [.command, .shift])
+
             Divider()
 
             Button("Show Overlay") {
                 appState.presentOverlayIfNeeded()
             }
             .keyboardShortcut("o", modifiers: [.command, .shift])
+
+            Button("Faster") {
+                appState.playbackController.increaseSpeed()
+            }
+            .keyboardShortcut("=", modifiers: [.command, .shift])
+
+            Button("Slower") {
+                appState.playbackController.decreaseSpeed()
+            }
+            .keyboardShortcut("-", modifiers: [.command, .shift])
 
             Button("Step Forward") {
                 appState.playbackController.stepForward()

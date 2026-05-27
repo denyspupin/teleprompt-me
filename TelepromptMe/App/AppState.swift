@@ -24,6 +24,29 @@ final class AppState {
     var selectedCollectionID: String?
     var selectedSidebarItem: SidebarItem? = .allScripts
 
+    init() {
+        shortcutManager.registerGlobalShortcuts(
+            toggleOverlay: { [weak self] in
+                self?.toggleOverlay()
+            },
+            togglePlayback: { [weak self] in
+                self?.togglePlayback()
+            },
+            stopPlayback: { [weak self] in
+                self?.stop()
+            },
+            restartPlayback: { [weak self] in
+                self?.restartPlayback()
+            },
+            increaseSpeed: { [weak self] in
+                self?.playbackController.increaseSpeed()
+            },
+            decreaseSpeed: { [weak self] in
+                self?.playbackController.decreaseSpeed()
+            }
+        )
+    }
+
     func togglePlayback() {
         playbackController.togglePlayback()
         syncOverlayInteractivity()
@@ -44,6 +67,20 @@ final class AppState {
         syncOverlayInteractivity()
     }
 
+    func restartPlayback() {
+        playbackController.restartFromTop()
+        syncOverlayInteractivity()
+    }
+
+    func hideOverlay() {
+        if playbackController.state == .playing {
+            playbackController.pause()
+        }
+        overlayManager.hide()
+        isOverlayVisible = overlayManager.isVisible
+        syncOverlayInteractivity()
+    }
+
     func presentOverlayIfNeeded() {
         overlayManager.present(appState: self)
         isOverlayVisible = overlayManager.isVisible
@@ -51,9 +88,11 @@ final class AppState {
     }
 
     func toggleOverlay() {
-        overlayManager.toggle(appState: self)
-        isOverlayVisible = overlayManager.isVisible
-        syncOverlayInteractivity()
+        if isOverlayVisible {
+            hideOverlay()
+        } else {
+            presentOverlayIfNeeded()
+        }
     }
 
     func activateScript(id: String? = nil, title: String, text: String) {
@@ -67,6 +106,6 @@ final class AppState {
     }
 
     func syncOverlayInteractivity() {
-        overlayManager.isInteractive = playbackController.state != .playing
+        overlayManager.isInteractive = true
     }
 }

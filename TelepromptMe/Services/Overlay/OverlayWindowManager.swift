@@ -3,6 +3,14 @@ import SwiftUI
 
 @MainActor
 final class OverlayWindowManager {
+    private enum Layout {
+        static let notchWidthEstimate: CGFloat = 320
+        static let defaultHeight: CGFloat = 220
+        static let minimumWidth: CGFloat = 560
+        static let maximumWidth: CGFloat = 760
+        static let topPadding: CGFloat = 10
+    }
+
     private var window: NSPanel?
     var isVisible: Bool {
         window?.isVisible ?? false
@@ -16,12 +24,13 @@ final class OverlayWindowManager {
 
     func present(appState: AppState) {
         if window == nil {
+            let defaultFrame = defaultPanelFrame()
             let contentView = TeleprompterOverlayView()
                 .environment(appState)
             let hostingController = NSHostingController(rootView: contentView)
 
             let panel = NSPanel(
-                contentRect: NSRect(x: 0, y: 0, width: 900, height: 220),
+                contentRect: defaultFrame,
                 styleMask: [.nonactivatingPanel, .fullSizeContentView],
                 backing: .buffered,
                 defer: false
@@ -33,14 +42,17 @@ final class OverlayWindowManager {
             panel.titlebarAppearsTransparent = true
             panel.isFloatingPanel = true
             panel.hidesOnDeactivate = false
-            panel.isMovableByWindowBackground = true
+            panel.isMovableByWindowBackground = false
             panel.backgroundColor = .clear
             panel.isOpaque = false
             panel.hasShadow = true
             panel.contentViewController = hostingController
 
             window = panel
-            positionPanel(panel)
+        }
+
+        if let window {
+            applyDefaultLayout(to: window)
         }
 
         updateInteractivity()
@@ -59,6 +71,26 @@ final class OverlayWindowManager {
         }
     }
 
+    private func defaultPanelFrame() -> NSRect {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            return NSRect(x: 0, y: 0, width: 420, height: Layout.defaultHeight)
+        }
+
+        let width = min(
+            max(Layout.notchWidthEstimate * 2, Layout.minimumWidth),
+            min(Layout.maximumWidth, screen.frame.width * 0.5)
+        )
+
+        return NSRect(x: 0, y: 0, width: width, height: Layout.defaultHeight)
+    }
+
+    private func applyDefaultLayout(to panel: NSPanel) {
+        let frame = defaultPanelFrame()
+        panel.setContentSize(frame.size)
+        panel.setFrame(frame, display: false)
+        positionPanel(panel)
+    }
+
     private func updateInteractivity() {
         guard let window else { return }
         window.ignoresMouseEvents = !isInteractive
@@ -67,9 +99,9 @@ final class OverlayWindowManager {
     private func positionPanel(_ panel: NSPanel) {
         guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
 
-        let safeFrame = screen.visibleFrame.insetBy(dx: 0, dy: 16)
-        let x = safeFrame.midX - (panel.frame.width / 2)
-        let y = safeFrame.maxY - panel.frame.height - 24
+        let x = screen.frame.midX - (panel.frame.width / 2)
+        let topInset = screen.safeAreaInsets.top
+        let y = screen.frame.maxY - topInset - panel.frame.height - Layout.topPadding
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }

@@ -5,6 +5,7 @@ import AppKit
 struct LibraryView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
+    @Query private var settings: [AppSettings]
     @Query(sort: \ScriptCollection.name) private var collections: [ScriptCollection]
     @Query(sort: \ScriptDocument.updatedAt, order: .reverse) private var documents: [ScriptDocument]
     @State private var draftTitle = ""
@@ -54,6 +55,7 @@ struct LibraryView: View {
             .onAppear {
                 normalizeSelection()
                 syncDraftFromSelection()
+                syncPlaybackSpeedFromSettings()
             }
             .onChange(of: appState.selectedSidebarItem) { _, _ in
                 appState.selectedDocumentID = nil
@@ -402,9 +404,19 @@ struct LibraryView: View {
         appState.isOverlayVisible ? "Hide Overlay" : "Show Overlay"
     }
 
+    private var currentSettings: AppSettings? {
+        settings.first
+    }
+
     private func normalizeSelection() {
         if appState.selectedSidebarItem == nil {
             appState.selectedSidebarItem = .allScripts
+        }
+    }
+
+    private func syncPlaybackSpeedFromSettings() {
+        if let currentSettings {
+            appState.playbackController.applySpeed(currentSettings.playbackSpeedWordsPerMinute)
         }
     }
 
@@ -482,6 +494,7 @@ struct LibraryView: View {
 
     private func activate(document: ScriptDocument) {
         appState.activateScript(id: document.id, title: document.title, text: document.plainText)
+        appState.presentOverlayIfNeeded()
     }
 
     private func toggleFavorite(for document: ScriptDocument) {
