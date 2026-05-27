@@ -18,14 +18,23 @@ final class ShortcutManager {
 
     private var hotKeyRefs: [ShortcutID: EventHotKeyRef] = [:]
     private var actions: [ShortcutID: () -> Void] = [:]
+    private var holdShortcut: AppShortcut?
+    private var holdShortcutDownHandler: (() -> Void)?
+    private var holdShortcutUpHandler: (() -> Void)?
+    private var isHoldShortcutPressed = false
+    private var localEventMonitor: Any?
 
     func registerGlobalShortcuts(
         toggleOverlayShortcut: AppShortcut,
         togglePlaybackShortcut: AppShortcut,
+        holdToScrollShortcut: AppShortcut,
         isToggleOverlayShortcutEnabled: Bool,
         isTogglePlaybackShortcutEnabled: Bool,
+        isHoldToScrollShortcutEnabled: Bool,
         toggleOverlay: @escaping () -> Void,
         togglePlayback: @escaping () -> Void,
+        beginHoldToScroll: @escaping () -> Void,
+        endHoldToScroll: @escaping () -> Void,
         stopPlayback: @escaping () -> Void,
         restartPlayback: @escaping () -> Void,
         increaseSpeed: @escaping () -> Void,
@@ -44,6 +53,10 @@ final class ShortcutManager {
         ]
 
         Self.sharedManagers[ObjectIdentifier(self)] = self
+        holdShortcut = isHoldToScrollShortcutEnabled ? holdToScrollShortcut : nil
+        holdShortcutDownHandler = beginHoldToScroll
+        holdShortcutUpHandler = endHoldToScroll
+        installEventMonitorsIfNeeded()
 
         let fixedModifiers = UInt32(cmdKey | shiftKey)
         if isToggleOverlayShortcutEnabled {
@@ -71,17 +84,29 @@ final class ShortcutManager {
             UnregisterEventHotKey(ref)
         }
 
+        if isHoldShortcutPressed {
+            holdShortcutUpHandler?()
+        }
+
         hotKeyRefs.removeAll()
         actions.removeAll()
+        holdShortcut = nil
+        holdShortcutDownHandler = nil
+        holdShortcutUpHandler = nil
+        isHoldShortcutPressed = false
         Self.sharedManagers.removeValue(forKey: ObjectIdentifier(self))
     }
 
     deinit {
         let hotKeyRefs = hotKeyRefs.values
         let identifier = ObjectIdentifier(self)
+        let localEventMonitor = localEventMonitor
         Task { @MainActor in
             for ref in hotKeyRefs {
                 UnregisterEventHotKey(ref)
+            }
+            if let localEventMonitor {
+                NSEvent.removeMonitor(localEventMonitor)
             }
             Self.sharedManagers.removeValue(forKey: identifier)
         }
@@ -146,5 +171,74 @@ final class ShortcutManager {
             nil,
             &Self.sharedHandler
         )
+    }
+
+    private func installEventMonitorsIfNeeded() {
+        if localEventMonitor == nil {
+            localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
+                let shouldConsume = self?.handleMonitoredEvent(event) ?? false
+                return shouldConsume ? nil : event
+            }
+        }
+    }
+
+    @discardableResult
+    private func handleMonitoredEvent(_ event: NSEvent) -> Bool {
+        guard let holdShortcut else { return false }
+        guard event.keyCode == holdShortcut.key.carbonKeyCode else { return false }
+
+        if holdShortcut.key.isModifierKey {
+            return handleModifierOnlyShortcutEvent(event, shortcut: holdShortcut)
+        }
+
+        switch event.type {
+        case .keyDown:
+            guard modifiersMatch(event.modifierFlags, shortcutModifiers: holdShortcut.modifiers) else { return false }
+            if !event.isARepeat, !isHoldShortcutPressed {
+                isHoldShortcutPressed = true
+                holdShortcutDownHandler?()
+            }
+            return true
+        case .keyUp:
+            guard isHoldShortcutPressed else { return false }
+            isHoldShortcutPressed = false
+            holdShortcutUpHandler?()
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func handleModifierOnlyShortcutEvent(_ event: NSEvent, shortcut: AppShortcut) -> Bool {
+        guard event.type == .flagsChanged, let keyModifierFlag = shortcut.key.modifierFlag else { return false }
+
+        var expectedFlags = shortcut.modifiers
+        expectedFlags.formUnion(AppShortcut.Modifiers(eventModifierFlags: keyModifierFlag))
+
+        let currentFlags = AppShortcut.Modifiers(
+            eventModifierFlags: event.modifierFlags.intersection([.command, .shift, .option, .control])
+        )
+        let isActive = currentFlags == expectedFlags
+
+        if isActive {
+            if !isHoldShortcutPressed {
+                isHoldShortcutPressed = true
+                holdShortcutDownHandler?()
+            }
+            return true
+        }
+
+        if isHoldShortcutPressed {
+            isHoldShortcutPressed = false
+            holdShortcutUpHandler?()
+            return true
+        }
+
+        return false
+    }
+
+    private func modifiersMatch(_ eventModifiers: NSEvent.ModifierFlags, shortcutModifiers: AppShortcut.Modifiers) -> Bool {
+        let relevantFlags = eventModifiers.intersection([.command, .shift, .option, .control])
+        return AppShortcut.Modifiers(eventModifierFlags: relevantFlags) == shortcutModifiers
     }
 }

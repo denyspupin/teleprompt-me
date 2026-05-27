@@ -18,6 +18,7 @@ final class AppState {
     var settingsSnapshot = AppSettingsSnapshot.default
     var isToggleOverlayShortcutAssigned = true
     var isTogglePlaybackShortcutAssigned = true
+    var isHoldToScrollShortcutAssigned = true
 
     var isOverlayVisible = false
     var activeScriptID: String?
@@ -36,12 +37,15 @@ final class AppState {
         let shouldReregisterShortcuts =
             snapshot.toggleOverlayShortcut != settingsSnapshot.toggleOverlayShortcut ||
             snapshot.togglePlaybackShortcut != settingsSnapshot.togglePlaybackShortcut ||
+            snapshot.holdToScrollShortcut != settingsSnapshot.holdToScrollShortcut ||
             settings.isToggleOverlayShortcutAssigned != isToggleOverlayShortcutAssigned ||
-            settings.isTogglePlaybackShortcutAssigned != isTogglePlaybackShortcutAssigned
+            settings.isTogglePlaybackShortcutAssigned != isTogglePlaybackShortcutAssigned ||
+            settings.isHoldToScrollShortcutAssigned != isHoldToScrollShortcutAssigned
 
         settingsSnapshot = snapshot
         isToggleOverlayShortcutAssigned = settings.isToggleOverlayShortcutAssigned
         isTogglePlaybackShortcutAssigned = settings.isTogglePlaybackShortcutAssigned
+        isHoldToScrollShortcutAssigned = settings.isHoldToScrollShortcutAssigned
         playbackController.applySpeed(snapshot.playbackSpeedWordsPerMinute)
 
         if shouldReregisterShortcuts {
@@ -72,6 +76,15 @@ final class AppState {
     func restartPlayback() {
         playbackController.restartFromTop()
         syncOverlayInteractivity()
+    }
+
+    func beginHoldToScroll() {
+        guard isOverlayVisible else { return }
+        playbackController.beginHoldScroll()
+    }
+
+    func endHoldToScroll() {
+        playbackController.endHoldScroll()
     }
 
     func hideOverlay() {
@@ -115,13 +128,21 @@ final class AppState {
         shortcutManager.registerGlobalShortcuts(
             toggleOverlayShortcut: settingsSnapshot.toggleOverlayShortcut,
             togglePlaybackShortcut: settingsSnapshot.togglePlaybackShortcut,
+            holdToScrollShortcut: settingsSnapshot.holdToScrollShortcut,
             isToggleOverlayShortcutEnabled: isToggleOverlayShortcutAssigned,
             isTogglePlaybackShortcutEnabled: isTogglePlaybackShortcutAssigned,
+            isHoldToScrollShortcutEnabled: isHoldToScrollShortcutAssigned,
             toggleOverlay: { [weak self] in
                 self?.toggleOverlay()
             },
             togglePlayback: { [weak self] in
                 self?.togglePlayback()
+            },
+            beginHoldToScroll: { [weak self] in
+                self?.beginHoldToScroll()
+            },
+            endHoldToScroll: { [weak self] in
+                self?.endHoldToScroll()
             },
             stopPlayback: { [weak self] in
                 self?.stop()

@@ -24,6 +24,10 @@ struct AppShortcut: Equatable {
         case equal
         case upArrow
         case downArrow
+        case commandKey
+        case shiftKey
+        case optionKey
+        case controlKey
 
         var id: String { rawValue }
 
@@ -43,6 +47,14 @@ struct AppShortcut: Equatable {
                 return "Up"
             case .downArrow:
                 return "Down"
+            case .commandKey:
+                return "Command"
+            case .shiftKey:
+                return "Shift"
+            case .optionKey:
+                return "Option"
+            case .controlKey:
+                return "Control"
             default:
                 return rawValue.uppercased()
             }
@@ -58,6 +70,8 @@ struct AppShortcut: Equatable {
                 return .upArrow
             case .downArrow:
                 return .downArrow
+            case .commandKey, .shiftKey, .optionKey, .controlKey:
+                return .space
             default:
                 return KeyEquivalent(Character(rawValue))
             }
@@ -108,6 +122,10 @@ struct AppShortcut: Equatable {
             case .equal: return UInt32(kVK_ANSI_Equal)
             case .upArrow: return UInt32(kVK_UpArrow)
             case .downArrow: return UInt32(kVK_DownArrow)
+            case .commandKey: return UInt32(kVK_Command)
+            case .shiftKey: return UInt32(kVK_Shift)
+            case .optionKey: return UInt32(kVK_Option)
+            case .controlKey: return UInt32(kVK_Control)
             }
         }
 
@@ -156,8 +174,31 @@ struct AppShortcut: Equatable {
             case UInt32(kVK_ANSI_Equal): self = .equal
             case UInt32(kVK_UpArrow): self = .upArrow
             case UInt32(kVK_DownArrow): self = .downArrow
+            case UInt32(kVK_Command), UInt32(kVK_RightCommand): self = .commandKey
+            case UInt32(kVK_Shift), UInt32(kVK_RightShift): self = .shiftKey
+            case UInt32(kVK_Option), UInt32(kVK_RightOption): self = .optionKey
+            case UInt32(kVK_Control), UInt32(kVK_RightControl): self = .controlKey
             default: return nil
             }
+        }
+
+        var modifierFlag: NSEvent.ModifierFlags? {
+            switch self {
+            case .commandKey:
+                return .command
+            case .shiftKey:
+                return .shift
+            case .optionKey:
+                return .option
+            case .controlKey:
+                return .control
+            default:
+                return nil
+            }
+        }
+
+        var isModifierKey: Bool {
+            modifierFlag != nil
         }
     }
 
@@ -226,6 +267,7 @@ struct AppShortcut: Equatable {
 enum AppShortcutCommand: String, CaseIterable, Identifiable {
     case toggleOverlay
     case togglePlayback
+    case holdToScroll
     case stopPlayback
     case restartPlayback
     case increaseSpeed
@@ -241,6 +283,8 @@ enum AppShortcutCommand: String, CaseIterable, Identifiable {
             return "Toggle overlay"
         case .togglePlayback:
             return "Toggle autoplay"
+        case .holdToScroll:
+            return "Hold to scroll"
         case .stopPlayback:
             return "Stop autoplay"
         case .restartPlayback:
@@ -262,6 +306,8 @@ enum AppShortcutCommand: String, CaseIterable, Identifiable {
             return "Show or hide the teleprompter overlay window"
         case .togglePlayback:
             return "Start or pause autoplay in the overlay"
+        case .holdToScroll:
+            return "Move the teleprompter text only while the shortcut is held down"
         case .stopPlayback:
             return "Stop autoplay and reset the overlay position"
         case .restartPlayback:
@@ -279,7 +325,7 @@ enum AppShortcutCommand: String, CaseIterable, Identifiable {
 
     var isEditable: Bool {
         switch self {
-        case .toggleOverlay, .togglePlayback:
+        case .toggleOverlay, .togglePlayback, .holdToScroll:
             return true
         case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
             return false
@@ -292,6 +338,8 @@ enum AppShortcutCommand: String, CaseIterable, Identifiable {
             return AppShortcut(key: .o, modifiers: [.command, .shift])
         case .togglePlayback:
             return AppShortcut(key: .p, modifiers: [.command, .shift])
+        case .holdToScroll:
+            return AppShortcut(key: .space, modifiers: [])
         case .stopPlayback:
             return AppShortcut(key: .s, modifiers: [.command, .shift])
         case .restartPlayback:
@@ -319,6 +367,7 @@ struct AppSettingsSnapshot: Equatable {
     var keepOverlayCentered: Bool
     var toggleOverlayShortcut: AppShortcut
     var togglePlaybackShortcut: AppShortcut
+    var holdToScrollShortcut: AppShortcut
 
     init(settings: AppSettings) {
         fontName = settings.fontName
@@ -331,6 +380,7 @@ struct AppSettingsSnapshot: Equatable {
         keepOverlayCentered = settings.keepOverlayCentered
         toggleOverlayShortcut = settings.toggleOverlayShortcut
         togglePlaybackShortcut = settings.togglePlaybackShortcut
+        holdToScrollShortcut = settings.holdToScrollShortcut
     }
 
     static let `default` = AppSettingsSnapshot(settings: AppSettings())
@@ -359,6 +409,8 @@ final class AppSettings {
     var toggleOverlayShortcutModifiersRawValue: Int
     var togglePlaybackShortcutKey: String
     var togglePlaybackShortcutModifiersRawValue: Int
+    var holdToScrollShortcutKey: String?
+    var holdToScrollShortcutModifiersRawValue: Int?
 
     init(
         id: String = "default-settings",
@@ -373,7 +425,9 @@ final class AppSettings {
         toggleOverlayShortcutKey: String = AppShortcut.Key.o.rawValue,
         toggleOverlayShortcutModifiersRawValue: Int = AppShortcut.Modifiers.command.union(.shift).rawValue,
         togglePlaybackShortcutKey: String = AppShortcut.Key.p.rawValue,
-        togglePlaybackShortcutModifiersRawValue: Int = AppShortcut.Modifiers.command.union(.shift).rawValue
+        togglePlaybackShortcutModifiersRawValue: Int = AppShortcut.Modifiers.command.union(.shift).rawValue,
+        holdToScrollShortcutKey: String? = AppShortcut.Key.space.rawValue,
+        holdToScrollShortcutModifiersRawValue: Int? = AppShortcut.Modifiers().rawValue
     ) {
         self.id = id
         self.fontName = fontName
@@ -388,6 +442,8 @@ final class AppSettings {
         self.toggleOverlayShortcutModifiersRawValue = toggleOverlayShortcutModifiersRawValue
         self.togglePlaybackShortcutKey = togglePlaybackShortcutKey
         self.togglePlaybackShortcutModifiersRawValue = togglePlaybackShortcutModifiersRawValue
+        self.holdToScrollShortcutKey = holdToScrollShortcutKey
+        self.holdToScrollShortcutModifiersRawValue = holdToScrollShortcutModifiersRawValue
     }
 
     var toggleOverlayShortcut: AppShortcut {
@@ -416,6 +472,19 @@ final class AppSettings {
         }
     }
 
+    var holdToScrollShortcut: AppShortcut {
+        get {
+            AppShortcut(
+                key: AppShortcut.Key(rawValue: holdToScrollShortcutKey ?? AppShortcut.Key.space.rawValue) ?? .space,
+                modifiers: AppShortcut.Modifiers(rawValue: max(holdToScrollShortcutModifiersRawValue ?? 0, 0))
+            )
+        }
+        set {
+            holdToScrollShortcutKey = newValue.key.rawValue
+            holdToScrollShortcutModifiersRawValue = newValue.modifiers.rawValue
+        }
+    }
+
     var snapshot: AppSettingsSnapshot {
         AppSettingsSnapshot(settings: self)
     }
@@ -426,5 +495,9 @@ final class AppSettings {
 
     var isTogglePlaybackShortcutAssigned: Bool {
         togglePlaybackShortcutModifiersRawValue >= 0
+    }
+
+    var isHoldToScrollShortcutAssigned: Bool {
+        (holdToScrollShortcutModifiersRawValue ?? 0) >= 0
     }
 }

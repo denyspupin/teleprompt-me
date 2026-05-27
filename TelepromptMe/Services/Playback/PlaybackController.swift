@@ -30,6 +30,7 @@ final class PlaybackController {
     var speedWordsPerMinute: Double = 140
     var currentOffset: Double = 0
     var stepUnitPoints: Double = 160
+    private(set) var isHoldScrolling = false
     private var timer: Timer?
     private var lastTickDate: Date?
 
@@ -86,6 +87,23 @@ final class PlaybackController {
         speedWordsPerMinute = min(Layout.maximumSpeed, max(Layout.minimumSpeed, newValue))
     }
 
+    func beginHoldScroll() {
+        guard !isHoldScrolling else { return }
+        isHoldScrolling = true
+        lastTickDate = .now
+        startTimerIfNeeded()
+    }
+
+    func endHoldScroll() {
+        guard isHoldScrolling else { return }
+        isHoldScrolling = false
+
+        if state != .playing {
+            invalidateTimer()
+            lastTickDate = nil
+        }
+    }
+
     private func startTimerIfNeeded() {
         guard timer == nil else { return }
 
@@ -102,7 +120,7 @@ final class PlaybackController {
     }
 
     private func tick() {
-        guard state == .playing else { return }
+        guard state == .playing || isHoldScrolling else { return }
 
         let now = Date()
         let elapsed = now.timeIntervalSince(lastTickDate ?? now)

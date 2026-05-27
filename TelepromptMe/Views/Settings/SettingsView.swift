@@ -119,6 +119,7 @@ struct SettingsView: View {
                 subtitle: target.subtitle,
                 shortcut: shortcut(for: target),
                 isAssigned: isShortcutAssigned(target),
+                allowsModifierOnlyShortcut: target == .holdToScroll,
                 onSave: { newValue in
                     updateShortcut(target, value: newValue)
                 },
@@ -464,6 +465,8 @@ struct SettingsView: View {
             return currentSettings.toggleOverlayShortcut
         case .togglePlayback:
             return currentSettings.togglePlaybackShortcut
+        case .holdToScroll:
+            return currentSettings.holdToScrollShortcut
         case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
             return target.defaultShortcut
         }
@@ -475,6 +478,8 @@ struct SettingsView: View {
             return currentSettings.toggleOverlayShortcutModifiersRawValue != -1
         case .togglePlayback:
             return currentSettings.togglePlaybackShortcutModifiersRawValue != -1
+        case .holdToScroll:
+            return (currentSettings.holdToScrollShortcutModifiersRawValue ?? 0) != -1
         case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
             return true
         }
@@ -549,6 +554,9 @@ struct SettingsView: View {
         case .togglePlayback:
             settingsModel.togglePlaybackShortcut = value
             settingsModel.togglePlaybackShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
+        case .holdToScroll:
+            settingsModel.holdToScrollShortcut = value
+            settingsModel.holdToScrollShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
         case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
             return
         }
@@ -568,6 +576,7 @@ private struct ShortcutEditorSheet: View {
     let subtitle: String
     @State var shortcut: AppShortcut
     let isAssigned: Bool
+    let allowsModifierOnlyShortcut: Bool
     let onSave: (AppShortcut) -> Void
     let onClear: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -582,7 +591,7 @@ private struct ShortcutEditorSheet: View {
                     .foregroundStyle(.secondary)
             }
 
-            ShortcutRecorderView { recordedShortcut in
+            ShortcutRecorderView(allowsModifierOnlyShortcut: allowsModifierOnlyShortcut) { recordedShortcut in
                 shortcut = recordedShortcut
                 onSave(recordedShortcut)
                 dismiss()
@@ -663,10 +672,12 @@ private struct ShortcutTokenStack: View {
 }
 
 private struct ShortcutRecorderView: NSViewRepresentable {
+    let allowsModifierOnlyShortcut: Bool
     let onRecord: (AppShortcut) -> Void
 
     func makeNSView(context: Context) -> ShortcutRecorderNSView {
         let view = ShortcutRecorderNSView()
+        view.allowsModifierOnlyShortcut = allowsModifierOnlyShortcut
         view.onRecord = onRecord
 
         DispatchQueue.main.async {
@@ -677,6 +688,7 @@ private struct ShortcutRecorderView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: ShortcutRecorderNSView, context: Context) {
+        nsView.allowsModifierOnlyShortcut = allowsModifierOnlyShortcut
         nsView.onRecord = onRecord
         DispatchQueue.main.async {
             nsView.window?.makeFirstResponder(nsView)
@@ -685,6 +697,7 @@ private struct ShortcutRecorderView: NSViewRepresentable {
 }
 
 private final class ShortcutRecorderNSView: NSView {
+    var allowsModifierOnlyShortcut = false
     var onRecord: ((AppShortcut) -> Void)?
 
     override var acceptsFirstResponder: Bool { true }
@@ -702,8 +715,10 @@ private final class ShortcutRecorderNSView: NSView {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
 
-        let title = "Press a key combination"
-        let subtitle = "The shortcut will be saved as soon as you press it."
+        let title = "Press a key or key combination"
+        let subtitle = allowsModifierOnlyShortcut
+            ? "Single keys and modifier-only keys like Control are supported."
+            : "Single keys like Space are supported and save immediately."
         let attributedText = NSMutableAttributedString(
             string: "\(title)\n\(subtitle)",
             attributes: [
@@ -736,7 +751,15 @@ private final class ShortcutRecorderNSView: NSView {
             return
         }
 
+        guard !key.isModifierKey else { return }
+
         let modifiers = AppShortcut.Modifiers(eventModifierFlags: event.modifierFlags)
         onRecord?(AppShortcut(key: key, modifiers: modifiers))
+    }
+
+    override func flagsChanged(with event: NSEvent) {
+        guard allowsModifierOnlyShortcut else { return }
+        guard let key = AppShortcut.Key(carbonKeyCode: UInt32(event.keyCode)), key.isModifierKey else { return }
+        onRecord?(AppShortcut(key: key, modifiers: []))
     }
 }
