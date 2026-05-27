@@ -1,29 +1,110 @@
 import SwiftUI
 
 struct TeleprompterOverlayView: View {
+    private enum Layout {
+        static let visibleLineCount: CGFloat = 3
+        static let controlHeight: CGFloat = 36
+    }
+
+    @Environment(AppState.self) private var appState
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("Overlay Preview", systemImage: "rectangle.topthird.inset.filled")
+            HStack(alignment: .center, spacing: 12) {
+                Label(appState.activeScriptTitle, systemImage: "rectangle.topthird.inset.filled")
                     .font(.headline)
+                    .lineLimit(1)
                 Spacer()
-                Text("Interactive when paused")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                controlBar
             }
 
-            Text("This is the native overlay shell for TelepromptMe. In the next phase it will render the active script with live typography, auto-scroll, and manual stepping.")
-                .font(.system(size: 30, weight: .medium, design: .rounded))
-                .foregroundStyle(.primary)
-                .lineSpacing(8)
+            teleprompterTextViewport
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .background(
+            .ultraThinMaterial.opacity(appState.settingsSnapshot.overlayOpacity),
+            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .strokeBorder(.white.opacity(0.18), lineWidth: 1)
         )
         .padding(8)
+        .onChange(of: appState.activeScriptID) { _, _ in
+            appState.playbackController.stop()
+        }
+    }
+
+    private var teleprompterTextViewport: some View {
+        textContent
+            .offset(y: -appState.playbackController.currentOffset)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(height: viewportHeight, alignment: .top)
+            .clipped()
+    }
+
+    private var controlBar: some View {
+        HStack(spacing: 8) {
+            controlButton(
+                systemImage: appState.playbackController.state == .playing ? "pause.fill" : "play.fill",
+                label: appState.playbackController.state == .playing ? "Pause" : "Play"
+            ) {
+                appState.togglePlayback()
+            }
+
+            controlButton(systemImage: "stop.fill", label: "Stop") {
+                appState.stop()
+            }
+
+            controlButton(systemImage: "backward.end.fill", label: "Start Over") {
+                appState.restartPlayback()
+            }
+
+            controlButton(systemImage: "minus", label: "Slower") {
+                appState.playbackController.decreaseSpeed()
+            }
+
+            Text("\(Int(appState.playbackController.speedWordsPerMinute))")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 36)
+
+            controlButton(systemImage: "plus", label: "Faster") {
+                appState.playbackController.increaseSpeed()
+            }
+
+            controlButton(systemImage: "xmark", label: "Hide") {
+                appState.hideOverlay()
+            }
+        }
+        .frame(height: Layout.controlHeight)
+    }
+
+    private func controlButton(systemImage: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 28, height: 28)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .help(label)
+    }
+
+    private var textContent: some View {
+        Text(appState.activeScriptText)
+            .font(appState.settingsSnapshot.resolvedFont)
+            .foregroundStyle(.primary)
+            .lineSpacing(appState.settingsSnapshot.lineSpacing)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var viewportHeight: CGFloat {
+        let fontSize = CGFloat(appState.settingsSnapshot.fontSize)
+        let lineSpacing = CGFloat(appState.settingsSnapshot.lineSpacing)
+        return (fontSize * Layout.visibleLineCount) + (lineSpacing * (Layout.visibleLineCount - 1)) + 10
     }
 }
