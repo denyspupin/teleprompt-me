@@ -2,8 +2,6 @@ import SwiftUI
 
 struct TeleprompterOverlayView: View {
     private enum Layout {
-        static let fontSize: CGFloat = 30
-        static let lineSpacing: CGFloat = 8
         static let visibleLineCount: CGFloat = 3
         static let controlHeight: CGFloat = 36
     }
@@ -24,7 +22,10 @@ struct TeleprompterOverlayView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .background(
+            .ultraThinMaterial.opacity(appState.settingsSnapshot.overlayOpacity),
+            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .strokeBorder(.white.opacity(0.18), lineWidth: 1)
@@ -93,15 +94,17 @@ struct TeleprompterOverlayView: View {
 
     private var textContent: some View {
         Text(appState.activeScriptText)
-            .font(.system(size: Layout.fontSize, weight: .medium, design: .rounded))
+            .font(appState.settingsSnapshot.resolvedFont)
             .foregroundStyle(.primary)
-            .lineSpacing(Layout.lineSpacing)
+            .lineSpacing(appState.settingsSnapshot.lineSpacing)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var viewportHeight: CGFloat {
-        (Layout.fontSize * Layout.visibleLineCount) + (Layout.lineSpacing * (Layout.visibleLineCount - 1)) + 10
+        let fontSize = CGFloat(appState.settingsSnapshot.fontSize)
+        let lineSpacing = CGFloat(appState.settingsSnapshot.lineSpacing)
+        return (fontSize * Layout.visibleLineCount) + (lineSpacing * (Layout.visibleLineCount - 1)) + 10
     }
 }

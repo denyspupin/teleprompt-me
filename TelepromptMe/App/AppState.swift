@@ -15,6 +15,9 @@ final class AppState {
     let overlayManager = OverlayWindowManager()
     let playbackController = PlaybackController()
     let shortcutManager = ShortcutManager()
+    var settingsSnapshot = AppSettingsSnapshot.default
+    var isToggleOverlayShortcutAssigned = true
+    var isTogglePlaybackShortcutAssigned = true
 
     var isOverlayVisible = false
     var activeScriptID: String?
@@ -25,26 +28,25 @@ final class AppState {
     var selectedSidebarItem: SidebarItem? = .allScripts
 
     init() {
-        shortcutManager.registerGlobalShortcuts(
-            toggleOverlay: { [weak self] in
-                self?.toggleOverlay()
-            },
-            togglePlayback: { [weak self] in
-                self?.togglePlayback()
-            },
-            stopPlayback: { [weak self] in
-                self?.stop()
-            },
-            restartPlayback: { [weak self] in
-                self?.restartPlayback()
-            },
-            increaseSpeed: { [weak self] in
-                self?.playbackController.increaseSpeed()
-            },
-            decreaseSpeed: { [weak self] in
-                self?.playbackController.decreaseSpeed()
-            }
-        )
+        registerShortcuts()
+    }
+
+    func applySettings(_ settings: AppSettings) {
+        let snapshot = settings.snapshot
+        let shouldReregisterShortcuts =
+            snapshot.toggleOverlayShortcut != settingsSnapshot.toggleOverlayShortcut ||
+            snapshot.togglePlaybackShortcut != settingsSnapshot.togglePlaybackShortcut ||
+            settings.isToggleOverlayShortcutAssigned != isToggleOverlayShortcutAssigned ||
+            settings.isTogglePlaybackShortcutAssigned != isTogglePlaybackShortcutAssigned
+
+        settingsSnapshot = snapshot
+        isToggleOverlayShortcutAssigned = settings.isToggleOverlayShortcutAssigned
+        isTogglePlaybackShortcutAssigned = settings.isTogglePlaybackShortcutAssigned
+        playbackController.applySpeed(snapshot.playbackSpeedWordsPerMinute)
+
+        if shouldReregisterShortcuts {
+            registerShortcuts()
+        }
     }
 
     func togglePlayback() {
@@ -107,5 +109,32 @@ final class AppState {
 
     func syncOverlayInteractivity() {
         overlayManager.isInteractive = true
+    }
+
+    private func registerShortcuts() {
+        shortcutManager.registerGlobalShortcuts(
+            toggleOverlayShortcut: settingsSnapshot.toggleOverlayShortcut,
+            togglePlaybackShortcut: settingsSnapshot.togglePlaybackShortcut,
+            isToggleOverlayShortcutEnabled: isToggleOverlayShortcutAssigned,
+            isTogglePlaybackShortcutEnabled: isTogglePlaybackShortcutAssigned,
+            toggleOverlay: { [weak self] in
+                self?.toggleOverlay()
+            },
+            togglePlayback: { [weak self] in
+                self?.togglePlayback()
+            },
+            stopPlayback: { [weak self] in
+                self?.stop()
+            },
+            restartPlayback: { [weak self] in
+                self?.restartPlayback()
+            },
+            increaseSpeed: { [weak self] in
+                self?.playbackController.increaseSpeed()
+            },
+            decreaseSpeed: { [weak self] in
+                self?.playbackController.decreaseSpeed()
+            }
+        )
     }
 }

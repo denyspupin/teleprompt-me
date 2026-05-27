@@ -11,6 +11,7 @@ struct LibraryView: View {
     @State private var draftTitle = ""
     @State private var draftText = ""
     @State private var hoveredAction: HoveredAction?
+    @State private var selectedSettingsSection: SettingsSection = .general
     @FocusState private var focusedEditor: EditorFocus?
 
     private enum EditorFocus: Hashable {
@@ -27,23 +28,21 @@ struct LibraryView: View {
 
     var body: some View {
         NavigationSplitView {
-            sidebar
-                .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 240)
+            Group {
+                if isSettingsSelected {
+                    settingsSidebar
+                } else {
+                    sidebar
+                }
+            }
+            .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 240)
         } detail: {
             ZStack {
                 Color(nsColor: .windowBackgroundColor)
                     .ignoresSafeArea()
 
-                Group {
-                    if currentSection == .settings {
-                        settingsContent
-                    } else if let document = selectedDocument {
-                        editorContent(for: document)
-                    } else {
-                        libraryContent
-                    }
-                }
-                .padding(24)
+                detailContent
+                .padding(isSettingsSelected ? 0 : 24)
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -112,6 +111,23 @@ struct LibraryView: View {
             }
             .buttonStyle(.plain)
             .padding(12)
+        }
+    }
+
+    private var settingsSidebar: some View {
+        SettingsSidebarView(selectedSection: $selectedSettingsSection) {
+            appState.selectedSidebarItem = .allScripts
+        }
+    }
+
+    @ViewBuilder
+    private var detailContent: some View {
+        if isSettingsSelected {
+            settingsContent
+        } else if let document = selectedDocument {
+            editorContent(for: document)
+        } else {
+            libraryContent
         }
     }
 
@@ -302,14 +318,8 @@ struct LibraryView: View {
 
     private var settingsContent: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Settings")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-            Text("Adjust TelepromptMe preferences here.")
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-
-            SettingsView()
-                .frame(maxWidth: 620, alignment: .leading)
+            SettingsView(selectedSection: $selectedSettingsSection)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
 
             Spacer()
         }
@@ -333,6 +343,13 @@ struct LibraryView: View {
 
     private var currentSection: AppState.SidebarItem {
         appState.selectedSidebarItem ?? .allScripts
+    }
+
+    private var isSettingsSelected: Bool {
+        if case .settings = currentSection {
+            return true
+        }
+        return false
     }
 
     private var filteredDocuments: [ScriptDocument] {

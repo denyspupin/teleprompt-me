@@ -20,6 +20,10 @@ final class ShortcutManager {
     private var actions: [ShortcutID: () -> Void] = [:]
 
     func registerGlobalShortcuts(
+        toggleOverlayShortcut: AppShortcut,
+        togglePlaybackShortcut: AppShortcut,
+        isToggleOverlayShortcutEnabled: Bool,
+        isTogglePlaybackShortcutEnabled: Bool,
         toggleOverlay: @escaping () -> Void,
         togglePlayback: @escaping () -> Void,
         stopPlayback: @escaping () -> Void,
@@ -41,13 +45,25 @@ final class ShortcutManager {
 
         Self.sharedManagers[ObjectIdentifier(self)] = self
 
-        let modifiers = UInt32(cmdKey | shiftKey)
-        registerHotKey(.toggleOverlay, keyCode: UInt32(kVK_ANSI_O), modifiers: modifiers)
-        registerHotKey(.togglePlayback, keyCode: UInt32(kVK_ANSI_P), modifiers: modifiers)
-        registerHotKey(.stopPlayback, keyCode: UInt32(kVK_ANSI_S), modifiers: modifiers)
-        registerHotKey(.restartPlayback, keyCode: UInt32(kVK_Return), modifiers: modifiers)
-        registerHotKey(.increaseSpeed, keyCode: UInt32(kVK_ANSI_Equal), modifiers: modifiers)
-        registerHotKey(.decreaseSpeed, keyCode: UInt32(kVK_ANSI_Minus), modifiers: modifiers)
+        let fixedModifiers = UInt32(cmdKey | shiftKey)
+        if isToggleOverlayShortcutEnabled {
+            registerHotKey(
+                .toggleOverlay,
+                keyCode: toggleOverlayShortcut.key.carbonKeyCode,
+                modifiers: toggleOverlayShortcut.modifiers.carbonModifiers
+            )
+        }
+        if isTogglePlaybackShortcutEnabled {
+            registerHotKey(
+                .togglePlayback,
+                keyCode: togglePlaybackShortcut.key.carbonKeyCode,
+                modifiers: togglePlaybackShortcut.modifiers.carbonModifiers
+            )
+        }
+        registerHotKey(.stopPlayback, keyCode: UInt32(kVK_ANSI_S), modifiers: fixedModifiers)
+        registerHotKey(.restartPlayback, keyCode: UInt32(kVK_Return), modifiers: fixedModifiers)
+        registerHotKey(.increaseSpeed, keyCode: UInt32(kVK_ANSI_Equal), modifiers: fixedModifiers)
+        registerHotKey(.decreaseSpeed, keyCode: UInt32(kVK_ANSI_Minus), modifiers: fixedModifiers)
     }
 
     func unregisterGlobalShortcuts() {

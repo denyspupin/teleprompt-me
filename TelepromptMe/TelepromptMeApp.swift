@@ -34,9 +34,10 @@ struct TelepromptMeApp: App {
         }
 
         Settings {
-            SettingsView()
+            SettingsWindowView()
                 .environment(appState)
         }
         .modelContainer(sharedModelContainer)
+        .defaultSize(width: 1080, height: 760)
     }
 }
