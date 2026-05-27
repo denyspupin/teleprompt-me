@@ -1,0 +1,42 @@
+import SwiftUI
+import SwiftData
+
+@main
+struct TelepromptMeApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @State private var appState = AppState()
+
+    var sharedModelContainer: ModelContainer = {
+        let schema = Schema([
+            ScriptDocument.self,
+            ScriptCollection.self,
+            AppSettings.self,
+        ])
+
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        do {
+            return try ModelContainer(for: schema, configurations: [configuration])
+        } catch {
+            fatalError("Unable to create model container: \(error)")
+        }
+    }()
+
+    var body: some Scene {
+        WindowGroup("Library") {
+            LibraryView()
+                .environment(appState)
+        }
+        .modelContainer(sharedModelContainer)
+        .defaultSize(width: 1100, height: 720)
+        .commands {
+            TelepromptMeCommands(appState: appState)
+        }
+
+        Settings {
+            SettingsView()
+                .environment(appState)
+        }
+        .modelContainer(sharedModelContainer)
+    }
+}
