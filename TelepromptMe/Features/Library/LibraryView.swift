@@ -97,9 +97,7 @@ struct LibraryView: View {
                     }
                 }
             }
-            .listStyle(.sidebar)
-
-            Divider()
+            .listStyle(.automatic)
 
             Button {
                 appState.selectedSidebarItem = .settings
@@ -110,7 +108,7 @@ struct LibraryView: View {
                     .padding(.vertical, 10)
             }
             .buttonStyle(.plain)
-            .padding(12)
+            .padding(8)
         }
     }
 

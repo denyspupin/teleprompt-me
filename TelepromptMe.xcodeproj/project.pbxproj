@@ -62,10 +62,9 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000033 /* App */,
-				A00000000000000000000034 /* Models */,
-				A00000000000000000000035 /* Services */,
-				A00000000000000000000036 /* Views */,
-				A00000000000000000000011 /* TelepromptMeApp.swift */,
+				A00000000000000000000034 /* Core */,
+				A00000000000000000000035 /* Features */,
+				A00000000000000000000036 /* Shared */,
 			);
 			path = TelepromptMe;
 			sourceTree = "<group>";
@@ -81,6 +80,7 @@
 		A00000000000000000000033 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000011 /* TelepromptMeApp.swift */,
 				A00000000000000000000012 /* AppDelegate.swift */,
 				A00000000000000000000013 /* AppState.swift */,
 				A00000000000000000000014 /* TelepromptMeCommands.swift */,
@@ -88,34 +88,30 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000034 /* Models */ = {
+		A00000000000000000000034 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000015 /* ScriptDocument.swift */,
-				A00000000000000000000016 /* ScriptCollection.swift */,
-				A00000000000000000000017 /* AppSettings.swift */,
+				A0000000000000000000003D /* Models */,
 			);
-			path = Models;
+			path = Core;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000035 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				A00000000000000000000037 /* Overlay */,
-				A00000000000000000000038 /* Playback */,
-				A00000000000000000000039 /* Shortcuts */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		A00000000000000000000036 /* Views */ = {
+		A00000000000000000000035 /* Features */ = {
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000003A /* Library */,
 				A0000000000000000000003B /* Settings */,
 				A0000000000000000000003C /* Overlay */,
 			);
-			path = Views;
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000036 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000003E /* Services */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		A00000000000000000000037 /* Overlay */ = {
@@ -166,6 +162,26 @@
 			path = Overlay;
 			sourceTree = "<group>";
 		};
+		A0000000000000000000003D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000015 /* ScriptDocument.swift */,
+				A00000000000000000000016 /* ScriptCollection.swift */,
+				A00000000000000000000017 /* AppSettings.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000003E /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000037 /* Overlay */,
+				A00000000000000000000038 /* Playback */,
+				A00000000000000000000039 /* Shortcuts */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -194,7 +210,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 2600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					A00000000000000000000040 = {
 						CreatedOnToolsVersion = 26.5;
@@ -257,8 +273,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -266,7 +284,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -281,8 +299,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -290,7 +310,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -306,10 +326,41 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -318,10 +369,40 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

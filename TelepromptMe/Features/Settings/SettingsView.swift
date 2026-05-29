@@ -47,7 +47,7 @@ struct SettingsSidebarView: View {
                     .padding(.vertical, 10)
             }
             .buttonStyle(.plain)
-            .padding(12)
+            .padding(10)
 
             Divider()
 
@@ -89,6 +89,7 @@ struct SettingsWindowView: View {
             SettingsView(selectedSection: $selectedSection)
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .glassEffect()
     }
 }
 
