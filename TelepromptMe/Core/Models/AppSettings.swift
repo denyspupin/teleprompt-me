@@ -324,12 +324,7 @@ enum AppShortcutCommand: String, CaseIterable, Identifiable {
     }
 
     var isEditable: Bool {
-        switch self {
-        case .toggleOverlay, .togglePlayback, .holdToScroll:
-            return true
-        case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
-            return false
-        }
+        true
     }
 
     var defaultShortcut: AppShortcut {
@@ -368,6 +363,12 @@ struct AppSettingsSnapshot: Equatable {
     var toggleOverlayShortcut: AppShortcut
     var togglePlaybackShortcut: AppShortcut
     var holdToScrollShortcut: AppShortcut
+    var stopPlaybackShortcut: AppShortcut
+    var restartPlaybackShortcut: AppShortcut
+    var increaseSpeedShortcut: AppShortcut
+    var decreaseSpeedShortcut: AppShortcut
+    var stepForwardShortcut: AppShortcut
+    var stepBackwardShortcut: AppShortcut
 
     init(settings: AppSettings) {
         fontName = settings.fontName
@@ -381,6 +382,12 @@ struct AppSettingsSnapshot: Equatable {
         toggleOverlayShortcut = settings.toggleOverlayShortcut
         togglePlaybackShortcut = settings.togglePlaybackShortcut
         holdToScrollShortcut = settings.holdToScrollShortcut
+        stopPlaybackShortcut = settings.stopPlaybackShortcut
+        restartPlaybackShortcut = settings.restartPlaybackShortcut
+        increaseSpeedShortcut = settings.increaseSpeedShortcut
+        decreaseSpeedShortcut = settings.decreaseSpeedShortcut
+        stepForwardShortcut = settings.stepForwardShortcut
+        stepBackwardShortcut = settings.stepBackwardShortcut
     }
 
     static let `default` = AppSettingsSnapshot(settings: AppSettings())
@@ -411,6 +418,18 @@ final class AppSettings {
     var togglePlaybackShortcutModifiersRawValue: Int
     var holdToScrollShortcutKey: String?
     var holdToScrollShortcutModifiersRawValue: Int?
+    var stopPlaybackShortcutKey: String?
+    var stopPlaybackShortcutModifiersRawValue: Int?
+    var restartPlaybackShortcutKey: String?
+    var restartPlaybackShortcutModifiersRawValue: Int?
+    var increaseSpeedShortcutKey: String?
+    var increaseSpeedShortcutModifiersRawValue: Int?
+    var decreaseSpeedShortcutKey: String?
+    var decreaseSpeedShortcutModifiersRawValue: Int?
+    var stepForwardShortcutKey: String?
+    var stepForwardShortcutModifiersRawValue: Int?
+    var stepBackwardShortcutKey: String?
+    var stepBackwardShortcutModifiersRawValue: Int?
 
     init(
         id: String = "default-settings",
@@ -427,7 +446,19 @@ final class AppSettings {
         togglePlaybackShortcutKey: String = AppShortcut.Key.p.rawValue,
         togglePlaybackShortcutModifiersRawValue: Int = AppShortcut.Modifiers.command.union(.shift).rawValue,
         holdToScrollShortcutKey: String? = AppShortcut.Key.space.rawValue,
-        holdToScrollShortcutModifiersRawValue: Int? = AppShortcut.Modifiers().rawValue
+        holdToScrollShortcutModifiersRawValue: Int? = AppShortcut.Modifiers().rawValue,
+        stopPlaybackShortcutKey: String? = AppShortcut.Key.s.rawValue,
+        stopPlaybackShortcutModifiersRawValue: Int? = AppShortcut.Modifiers.command.union(.shift).rawValue,
+        restartPlaybackShortcutKey: String? = AppShortcut.Key.return.rawValue,
+        restartPlaybackShortcutModifiersRawValue: Int? = AppShortcut.Modifiers.command.union(.shift).rawValue,
+        increaseSpeedShortcutKey: String? = AppShortcut.Key.equal.rawValue,
+        increaseSpeedShortcutModifiersRawValue: Int? = AppShortcut.Modifiers.command.union(.shift).rawValue,
+        decreaseSpeedShortcutKey: String? = AppShortcut.Key.minus.rawValue,
+        decreaseSpeedShortcutModifiersRawValue: Int? = AppShortcut.Modifiers.command.union(.shift).rawValue,
+        stepForwardShortcutKey: String? = AppShortcut.Key.downArrow.rawValue,
+        stepForwardShortcutModifiersRawValue: Int? = AppShortcut.Modifiers.option.rawValue,
+        stepBackwardShortcutKey: String? = AppShortcut.Key.upArrow.rawValue,
+        stepBackwardShortcutModifiersRawValue: Int? = AppShortcut.Modifiers.option.rawValue
     ) {
         self.id = id
         self.fontName = fontName
@@ -444,6 +475,18 @@ final class AppSettings {
         self.togglePlaybackShortcutModifiersRawValue = togglePlaybackShortcutModifiersRawValue
         self.holdToScrollShortcutKey = holdToScrollShortcutKey
         self.holdToScrollShortcutModifiersRawValue = holdToScrollShortcutModifiersRawValue
+        self.stopPlaybackShortcutKey = stopPlaybackShortcutKey
+        self.stopPlaybackShortcutModifiersRawValue = stopPlaybackShortcutModifiersRawValue
+        self.restartPlaybackShortcutKey = restartPlaybackShortcutKey
+        self.restartPlaybackShortcutModifiersRawValue = restartPlaybackShortcutModifiersRawValue
+        self.increaseSpeedShortcutKey = increaseSpeedShortcutKey
+        self.increaseSpeedShortcutModifiersRawValue = increaseSpeedShortcutModifiersRawValue
+        self.decreaseSpeedShortcutKey = decreaseSpeedShortcutKey
+        self.decreaseSpeedShortcutModifiersRawValue = decreaseSpeedShortcutModifiersRawValue
+        self.stepForwardShortcutKey = stepForwardShortcutKey
+        self.stepForwardShortcutModifiersRawValue = stepForwardShortcutModifiersRawValue
+        self.stepBackwardShortcutKey = stepBackwardShortcutKey
+        self.stepBackwardShortcutModifiersRawValue = stepBackwardShortcutModifiersRawValue
     }
 
     var toggleOverlayShortcut: AppShortcut {
@@ -485,6 +528,84 @@ final class AppSettings {
         }
     }
 
+    var stopPlaybackShortcut: AppShortcut {
+        get {
+            AppShortcut(
+                key: AppShortcut.Key(rawValue: stopPlaybackShortcutKey ?? AppShortcut.Key.s.rawValue) ?? .s,
+                modifiers: AppShortcut.Modifiers(rawValue: max(stopPlaybackShortcutModifiersRawValue ?? AppShortcutCommand.stopPlayback.defaultShortcut.modifiers.rawValue, 0))
+            )
+        }
+        set {
+            stopPlaybackShortcutKey = newValue.key.rawValue
+            stopPlaybackShortcutModifiersRawValue = newValue.modifiers.rawValue
+        }
+    }
+
+    var restartPlaybackShortcut: AppShortcut {
+        get {
+            AppShortcut(
+                key: AppShortcut.Key(rawValue: restartPlaybackShortcutKey ?? AppShortcut.Key.return.rawValue) ?? .return,
+                modifiers: AppShortcut.Modifiers(rawValue: max(restartPlaybackShortcutModifiersRawValue ?? AppShortcutCommand.restartPlayback.defaultShortcut.modifiers.rawValue, 0))
+            )
+        }
+        set {
+            restartPlaybackShortcutKey = newValue.key.rawValue
+            restartPlaybackShortcutModifiersRawValue = newValue.modifiers.rawValue
+        }
+    }
+
+    var increaseSpeedShortcut: AppShortcut {
+        get {
+            AppShortcut(
+                key: AppShortcut.Key(rawValue: increaseSpeedShortcutKey ?? AppShortcut.Key.equal.rawValue) ?? .equal,
+                modifiers: AppShortcut.Modifiers(rawValue: max(increaseSpeedShortcutModifiersRawValue ?? AppShortcutCommand.increaseSpeed.defaultShortcut.modifiers.rawValue, 0))
+            )
+        }
+        set {
+            increaseSpeedShortcutKey = newValue.key.rawValue
+            increaseSpeedShortcutModifiersRawValue = newValue.modifiers.rawValue
+        }
+    }
+
+    var decreaseSpeedShortcut: AppShortcut {
+        get {
+            AppShortcut(
+                key: AppShortcut.Key(rawValue: decreaseSpeedShortcutKey ?? AppShortcut.Key.minus.rawValue) ?? .minus,
+                modifiers: AppShortcut.Modifiers(rawValue: max(decreaseSpeedShortcutModifiersRawValue ?? AppShortcutCommand.decreaseSpeed.defaultShortcut.modifiers.rawValue, 0))
+            )
+        }
+        set {
+            decreaseSpeedShortcutKey = newValue.key.rawValue
+            decreaseSpeedShortcutModifiersRawValue = newValue.modifiers.rawValue
+        }
+    }
+
+    var stepForwardShortcut: AppShortcut {
+        get {
+            AppShortcut(
+                key: AppShortcut.Key(rawValue: stepForwardShortcutKey ?? AppShortcut.Key.downArrow.rawValue) ?? .downArrow,
+                modifiers: AppShortcut.Modifiers(rawValue: max(stepForwardShortcutModifiersRawValue ?? AppShortcutCommand.stepForward.defaultShortcut.modifiers.rawValue, 0))
+            )
+        }
+        set {
+            stepForwardShortcutKey = newValue.key.rawValue
+            stepForwardShortcutModifiersRawValue = newValue.modifiers.rawValue
+        }
+    }
+
+    var stepBackwardShortcut: AppShortcut {
+        get {
+            AppShortcut(
+                key: AppShortcut.Key(rawValue: stepBackwardShortcutKey ?? AppShortcut.Key.upArrow.rawValue) ?? .upArrow,
+                modifiers: AppShortcut.Modifiers(rawValue: max(stepBackwardShortcutModifiersRawValue ?? AppShortcutCommand.stepBackward.defaultShortcut.modifiers.rawValue, 0))
+            )
+        }
+        set {
+            stepBackwardShortcutKey = newValue.key.rawValue
+            stepBackwardShortcutModifiersRawValue = newValue.modifiers.rawValue
+        }
+    }
+
     var snapshot: AppSettingsSnapshot {
         AppSettingsSnapshot(settings: self)
     }
@@ -499,5 +620,29 @@ final class AppSettings {
 
     var isHoldToScrollShortcutAssigned: Bool {
         (holdToScrollShortcutModifiersRawValue ?? 0) >= 0
+    }
+
+    var isStopPlaybackShortcutAssigned: Bool {
+        (stopPlaybackShortcutModifiersRawValue ?? AppShortcutCommand.stopPlayback.defaultShortcut.modifiers.rawValue) >= 0
+    }
+
+    var isRestartPlaybackShortcutAssigned: Bool {
+        (restartPlaybackShortcutModifiersRawValue ?? AppShortcutCommand.restartPlayback.defaultShortcut.modifiers.rawValue) >= 0
+    }
+
+    var isIncreaseSpeedShortcutAssigned: Bool {
+        (increaseSpeedShortcutModifiersRawValue ?? AppShortcutCommand.increaseSpeed.defaultShortcut.modifiers.rawValue) >= 0
+    }
+
+    var isDecreaseSpeedShortcutAssigned: Bool {
+        (decreaseSpeedShortcutModifiersRawValue ?? AppShortcutCommand.decreaseSpeed.defaultShortcut.modifiers.rawValue) >= 0
+    }
+
+    var isStepForwardShortcutAssigned: Bool {
+        (stepForwardShortcutModifiersRawValue ?? AppShortcutCommand.stepForward.defaultShortcut.modifiers.rawValue) >= 0
+    }
+
+    var isStepBackwardShortcutAssigned: Bool {
+        (stepBackwardShortcutModifiersRawValue ?? AppShortcutCommand.stepBackward.defaultShortcut.modifiers.rawValue) >= 0
     }
 }

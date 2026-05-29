@@ -5,65 +5,89 @@ struct TelepromptMeCommands: Commands {
 
     var body: some Commands {
         CommandMenu("Playback") {
-            if appState.isTogglePlaybackShortcutAssigned {
-                Button(appState.playbackController.state == .playing ? "Pause" : "Play") {
-                    appState.togglePlayback()
-                }
-                .keyboardShortcut(
-                    appState.settingsSnapshot.togglePlaybackShortcut.key.keyEquivalent,
-                    modifiers: appState.settingsSnapshot.togglePlaybackShortcut.modifiers.eventModifiers
-                )
-            } else {
-                Button(appState.playbackController.state == .playing ? "Pause" : "Play") {
-                    appState.togglePlayback()
-                }
+            shortcutMenuButton(
+                title: appState.playbackController.state == .playing ? "Pause" : "Play",
+                shortcut: appState.settingsSnapshot.togglePlaybackShortcut,
+                isAssigned: appState.isTogglePlaybackShortcutAssigned
+            ) {
+                appState.togglePlayback()
             }
 
-            Button("Stop") {
+            shortcutMenuButton(
+                title: "Stop",
+                shortcut: appState.settingsSnapshot.stopPlaybackShortcut,
+                isAssigned: appState.isStopPlaybackShortcutAssigned
+            ) {
                 appState.stop()
             }
-            .keyboardShortcut(".", modifiers: [.command])
 
-            Button("Restart From Top") {
+            shortcutMenuButton(
+                title: "Restart From Top",
+                shortcut: appState.settingsSnapshot.restartPlaybackShortcut,
+                isAssigned: appState.isRestartPlaybackShortcutAssigned
+            ) {
                 appState.restartPlayback()
             }
-            .keyboardShortcut(.return, modifiers: [.command, .shift])
 
             Divider()
 
-            if appState.isToggleOverlayShortcutAssigned {
-                Button("Show Overlay") {
-                    appState.presentOverlayIfNeeded()
-                }
-                .keyboardShortcut(
-                    appState.settingsSnapshot.toggleOverlayShortcut.key.keyEquivalent,
-                    modifiers: appState.settingsSnapshot.toggleOverlayShortcut.modifiers.eventModifiers
-                )
-            } else {
-                Button("Show Overlay") {
-                    appState.presentOverlayIfNeeded()
-                }
+            shortcutMenuButton(
+                title: "Show Overlay",
+                shortcut: appState.settingsSnapshot.toggleOverlayShortcut,
+                isAssigned: appState.isToggleOverlayShortcutAssigned
+            ) {
+                appState.presentOverlayIfNeeded()
             }
 
-            Button("Faster") {
+            shortcutMenuButton(
+                title: "Faster",
+                shortcut: appState.settingsSnapshot.increaseSpeedShortcut,
+                isAssigned: appState.isIncreaseSpeedShortcutAssigned
+            ) {
                 appState.playbackController.increaseSpeed()
             }
-            .keyboardShortcut("=", modifiers: [.command, .shift])
 
-            Button("Slower") {
+            shortcutMenuButton(
+                title: "Slower",
+                shortcut: appState.settingsSnapshot.decreaseSpeedShortcut,
+                isAssigned: appState.isDecreaseSpeedShortcutAssigned
+            ) {
                 appState.playbackController.decreaseSpeed()
             }
-            .keyboardShortcut("-", modifiers: [.command, .shift])
 
-            Button("Step Forward") {
+            shortcutMenuButton(
+                title: "Step Forward",
+                shortcut: appState.settingsSnapshot.stepForwardShortcut,
+                isAssigned: appState.isStepForwardShortcutAssigned
+            ) {
                 appState.playbackController.stepForward()
             }
-            .keyboardShortcut(.downArrow, modifiers: [.option])
 
-            Button("Step Backward") {
+            shortcutMenuButton(
+                title: "Step Backward",
+                shortcut: appState.settingsSnapshot.stepBackwardShortcut,
+                isAssigned: appState.isStepBackwardShortcutAssigned
+            ) {
                 appState.playbackController.stepBackward()
             }
-            .keyboardShortcut(.upArrow, modifiers: [.option])
+        }
+    }
+
+    @ViewBuilder
+    private func shortcutMenuButton(
+        title: String,
+        shortcut: AppShortcut,
+        isAssigned: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        if isAssigned {
+            Button(title, action: action)
+                .keyboardShortcut(
+                    shortcut.key.keyEquivalent,
+                    modifiers: shortcut.modifiers.eventModifiers
+                )
+        } else {
+            Button(title, action: action)
         }
     }
 }

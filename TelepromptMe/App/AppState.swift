@@ -19,6 +19,12 @@ final class AppState {
     var isToggleOverlayShortcutAssigned = true
     var isTogglePlaybackShortcutAssigned = true
     var isHoldToScrollShortcutAssigned = true
+    var isStopPlaybackShortcutAssigned = true
+    var isRestartPlaybackShortcutAssigned = true
+    var isIncreaseSpeedShortcutAssigned = true
+    var isDecreaseSpeedShortcutAssigned = true
+    var isStepForwardShortcutAssigned = true
+    var isStepBackwardShortcutAssigned = true
 
     var isOverlayVisible = false
     var activeScriptID: String?
@@ -38,14 +44,32 @@ final class AppState {
             snapshot.toggleOverlayShortcut != settingsSnapshot.toggleOverlayShortcut ||
             snapshot.togglePlaybackShortcut != settingsSnapshot.togglePlaybackShortcut ||
             snapshot.holdToScrollShortcut != settingsSnapshot.holdToScrollShortcut ||
+            snapshot.stopPlaybackShortcut != settingsSnapshot.stopPlaybackShortcut ||
+            snapshot.restartPlaybackShortcut != settingsSnapshot.restartPlaybackShortcut ||
+            snapshot.increaseSpeedShortcut != settingsSnapshot.increaseSpeedShortcut ||
+            snapshot.decreaseSpeedShortcut != settingsSnapshot.decreaseSpeedShortcut ||
+            snapshot.stepForwardShortcut != settingsSnapshot.stepForwardShortcut ||
+            snapshot.stepBackwardShortcut != settingsSnapshot.stepBackwardShortcut ||
             settings.isToggleOverlayShortcutAssigned != isToggleOverlayShortcutAssigned ||
             settings.isTogglePlaybackShortcutAssigned != isTogglePlaybackShortcutAssigned ||
-            settings.isHoldToScrollShortcutAssigned != isHoldToScrollShortcutAssigned
+            settings.isHoldToScrollShortcutAssigned != isHoldToScrollShortcutAssigned ||
+            settings.isStopPlaybackShortcutAssigned != isStopPlaybackShortcutAssigned ||
+            settings.isRestartPlaybackShortcutAssigned != isRestartPlaybackShortcutAssigned ||
+            settings.isIncreaseSpeedShortcutAssigned != isIncreaseSpeedShortcutAssigned ||
+            settings.isDecreaseSpeedShortcutAssigned != isDecreaseSpeedShortcutAssigned ||
+            settings.isStepForwardShortcutAssigned != isStepForwardShortcutAssigned ||
+            settings.isStepBackwardShortcutAssigned != isStepBackwardShortcutAssigned
 
         settingsSnapshot = snapshot
         isToggleOverlayShortcutAssigned = settings.isToggleOverlayShortcutAssigned
         isTogglePlaybackShortcutAssigned = settings.isTogglePlaybackShortcutAssigned
         isHoldToScrollShortcutAssigned = settings.isHoldToScrollShortcutAssigned
+        isStopPlaybackShortcutAssigned = settings.isStopPlaybackShortcutAssigned
+        isRestartPlaybackShortcutAssigned = settings.isRestartPlaybackShortcutAssigned
+        isIncreaseSpeedShortcutAssigned = settings.isIncreaseSpeedShortcutAssigned
+        isDecreaseSpeedShortcutAssigned = settings.isDecreaseSpeedShortcutAssigned
+        isStepForwardShortcutAssigned = settings.isStepForwardShortcutAssigned
+        isStepBackwardShortcutAssigned = settings.isStepBackwardShortcutAssigned
         playbackController.applySpeed(snapshot.playbackSpeedWordsPerMinute)
 
         if shouldReregisterShortcuts {
@@ -129,9 +153,21 @@ final class AppState {
             toggleOverlayShortcut: settingsSnapshot.toggleOverlayShortcut,
             togglePlaybackShortcut: settingsSnapshot.togglePlaybackShortcut,
             holdToScrollShortcut: settingsSnapshot.holdToScrollShortcut,
+            stopPlaybackShortcut: settingsSnapshot.stopPlaybackShortcut,
+            restartPlaybackShortcut: settingsSnapshot.restartPlaybackShortcut,
+            increaseSpeedShortcut: settingsSnapshot.increaseSpeedShortcut,
+            decreaseSpeedShortcut: settingsSnapshot.decreaseSpeedShortcut,
+            stepForwardShortcut: settingsSnapshot.stepForwardShortcut,
+            stepBackwardShortcut: settingsSnapshot.stepBackwardShortcut,
             isToggleOverlayShortcutEnabled: isToggleOverlayShortcutAssigned,
             isTogglePlaybackShortcutEnabled: isTogglePlaybackShortcutAssigned,
             isHoldToScrollShortcutEnabled: isHoldToScrollShortcutAssigned,
+            isStopPlaybackShortcutEnabled: isStopPlaybackShortcutAssigned,
+            isRestartPlaybackShortcutEnabled: isRestartPlaybackShortcutAssigned,
+            isIncreaseSpeedShortcutEnabled: isIncreaseSpeedShortcutAssigned,
+            isDecreaseSpeedShortcutEnabled: isDecreaseSpeedShortcutAssigned,
+            isStepForwardShortcutEnabled: isStepForwardShortcutAssigned,
+            isStepBackwardShortcutEnabled: isStepBackwardShortcutAssigned,
             toggleOverlay: { [weak self] in
                 self?.toggleOverlay()
             },
@@ -155,6 +191,12 @@ final class AppState {
             },
             decreaseSpeed: { [weak self] in
                 self?.playbackController.decreaseSpeed()
+            },
+            stepForward: { [weak self] in
+                self?.playbackController.stepForward()
+            },
+            stepBackward: { [weak self] in
+                self?.playbackController.stepBackward()
             }
         )
     }

@@ -10,6 +10,8 @@ final class ShortcutManager {
         case restartPlayback = 4
         case increaseSpeed = 5
         case decreaseSpeed = 6
+        case stepForward = 7
+        case stepBackward = 8
     }
 
     private static let hotKeySignature: OSType = 0x54504D45 // TPME
@@ -28,9 +30,21 @@ final class ShortcutManager {
         toggleOverlayShortcut: AppShortcut,
         togglePlaybackShortcut: AppShortcut,
         holdToScrollShortcut: AppShortcut,
+        stopPlaybackShortcut: AppShortcut,
+        restartPlaybackShortcut: AppShortcut,
+        increaseSpeedShortcut: AppShortcut,
+        decreaseSpeedShortcut: AppShortcut,
+        stepForwardShortcut: AppShortcut,
+        stepBackwardShortcut: AppShortcut,
         isToggleOverlayShortcutEnabled: Bool,
         isTogglePlaybackShortcutEnabled: Bool,
         isHoldToScrollShortcutEnabled: Bool,
+        isStopPlaybackShortcutEnabled: Bool,
+        isRestartPlaybackShortcutEnabled: Bool,
+        isIncreaseSpeedShortcutEnabled: Bool,
+        isDecreaseSpeedShortcutEnabled: Bool,
+        isStepForwardShortcutEnabled: Bool,
+        isStepBackwardShortcutEnabled: Bool,
         toggleOverlay: @escaping () -> Void,
         togglePlayback: @escaping () -> Void,
         beginHoldToScroll: @escaping () -> Void,
@@ -38,7 +52,9 @@ final class ShortcutManager {
         stopPlayback: @escaping () -> Void,
         restartPlayback: @escaping () -> Void,
         increaseSpeed: @escaping () -> Void,
-        decreaseSpeed: @escaping () -> Void
+        decreaseSpeed: @escaping () -> Void,
+        stepForward: @escaping () -> Void,
+        stepBackward: @escaping () -> Void
     ) {
         unregisterGlobalShortcuts()
         installHandlerIfNeeded()
@@ -50,6 +66,8 @@ final class ShortcutManager {
             .restartPlayback: restartPlayback,
             .increaseSpeed: increaseSpeed,
             .decreaseSpeed: decreaseSpeed,
+            .stepForward: stepForward,
+            .stepBackward: stepBackward,
         ]
 
         Self.sharedManagers[ObjectIdentifier(self)] = self
@@ -58,7 +76,6 @@ final class ShortcutManager {
         holdShortcutUpHandler = endHoldToScroll
         installEventMonitorsIfNeeded()
 
-        let fixedModifiers = UInt32(cmdKey | shiftKey)
         if isToggleOverlayShortcutEnabled {
             registerHotKey(
                 .toggleOverlay,
@@ -73,10 +90,48 @@ final class ShortcutManager {
                 modifiers: togglePlaybackShortcut.modifiers.carbonModifiers
             )
         }
-        registerHotKey(.stopPlayback, keyCode: UInt32(kVK_ANSI_S), modifiers: fixedModifiers)
-        registerHotKey(.restartPlayback, keyCode: UInt32(kVK_Return), modifiers: fixedModifiers)
-        registerHotKey(.increaseSpeed, keyCode: UInt32(kVK_ANSI_Equal), modifiers: fixedModifiers)
-        registerHotKey(.decreaseSpeed, keyCode: UInt32(kVK_ANSI_Minus), modifiers: fixedModifiers)
+        if isStopPlaybackShortcutEnabled {
+            registerHotKey(
+                .stopPlayback,
+                keyCode: stopPlaybackShortcut.key.carbonKeyCode,
+                modifiers: stopPlaybackShortcut.modifiers.carbonModifiers
+            )
+        }
+        if isRestartPlaybackShortcutEnabled {
+            registerHotKey(
+                .restartPlayback,
+                keyCode: restartPlaybackShortcut.key.carbonKeyCode,
+                modifiers: restartPlaybackShortcut.modifiers.carbonModifiers
+            )
+        }
+        if isIncreaseSpeedShortcutEnabled {
+            registerHotKey(
+                .increaseSpeed,
+                keyCode: increaseSpeedShortcut.key.carbonKeyCode,
+                modifiers: increaseSpeedShortcut.modifiers.carbonModifiers
+            )
+        }
+        if isDecreaseSpeedShortcutEnabled {
+            registerHotKey(
+                .decreaseSpeed,
+                keyCode: decreaseSpeedShortcut.key.carbonKeyCode,
+                modifiers: decreaseSpeedShortcut.modifiers.carbonModifiers
+            )
+        }
+        if isStepForwardShortcutEnabled {
+            registerHotKey(
+                .stepForward,
+                keyCode: stepForwardShortcut.key.carbonKeyCode,
+                modifiers: stepForwardShortcut.modifiers.carbonModifiers
+            )
+        }
+        if isStepBackwardShortcutEnabled {
+            registerHotKey(
+                .stepBackward,
+                keyCode: stepBackwardShortcut.key.carbonKeyCode,
+                modifiers: stepBackwardShortcut.modifiers.carbonModifiers
+            )
+        }
     }
 
     func unregisterGlobalShortcuts() {

@@ -75,41 +75,95 @@ struct LibraryView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            List(selection: selectedSidebarBinding) {
-                Section("Library") {
-                    Label("All Scripts", systemImage: "doc.text")
-                        .tag(AppState.SidebarItem.allScripts)
-                    Label("Favorites", systemImage: "star")
-                        .tag(AppState.SidebarItem.favorites)
-                    Label("Tags", systemImage: "tag")
-                        .tag(AppState.SidebarItem.tags)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    sidebarSection(title: "Library") {
+                        sidebarButton(
+                            title: "All Scripts",
+                            systemImage: "doc.text",
+                            item: .allScripts
+                        )
+                        sidebarButton(
+                            title: "Favorites",
+                            systemImage: "star",
+                            item: .favorites
+                        )
+                        sidebarButton(
+                            title: "Tags",
+                            systemImage: "tag",
+                            item: .tags
+                        )
+                    }
 
-                Section("Collections") {
-                    if collections.isEmpty {
-                        Text("No collections yet")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(collections) { collection in
-                            Label(collection.name, systemImage: "folder")
-                                .tag(AppState.SidebarItem.collection(collection.id))
+                    sidebarSection(title: "Collections") {
+                        if collections.isEmpty {
+                            Text("No collections yet")
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                        } else {
+                            ForEach(collections) { collection in
+                                sidebarButton(
+                                    title: collection.name,
+                                    systemImage: "folder",
+                                    item: .collection(collection.id)
+                                )
+                            }
                         }
                     }
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 12)
             }
-            .listStyle(.automatic)
+            .scrollIndicators(.never)
 
             Button {
                 appState.selectedSidebarItem = .settings
             } label: {
-                Label("Settings", systemImage: "gearshape")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
+                SidebarHoverRow(
+                    title: "Settings",
+                    systemImage: "gearshape",
+                    isSelected: currentSection == .settings
+                )
             }
             .buttonStyle(.plain)
             .padding(8)
         }
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    @ViewBuilder
+    private func sidebarSection<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+
+            VStack(spacing: 6) {
+                content()
+            }
+        }
+    }
+
+    private func sidebarButton(
+        title: String,
+        systemImage: String,
+        item: AppState.SidebarItem
+    ) -> some View {
+        Button {
+            appState.selectedSidebarItem = item
+        } label: {
+            SidebarHoverRow(
+                title: title,
+                systemImage: systemImage,
+                isSelected: currentSection == item
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var settingsSidebar: some View {
@@ -330,13 +384,6 @@ struct LibraryView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
             )
-    }
-
-    private var selectedSidebarBinding: Binding<AppState.SidebarItem?> {
-        Binding(
-            get: { appState.selectedSidebarItem },
-            set: { appState.selectedSidebarItem = $0 }
-        )
     }
 
     private var currentSection: AppState.SidebarItem {

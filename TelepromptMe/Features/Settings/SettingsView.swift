@@ -32,6 +32,49 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     }
 }
 
+struct SidebarHoverRow: View {
+    let title: String
+    let systemImage: String
+    var isSelected: Bool = false
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovered = false
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(selectedBackgroundColor)
+                } else if isHovered {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(hoverBackgroundColor)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .onHover { hovering in
+                isHovered = hovering
+            }
+            .animation(.easeOut(duration: 0.12), value: isHovered)
+    }
+
+    private var hoverBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.08)
+        default:
+            return Color.black.opacity(0.06)
+        }
+    }
+
+    private var selectedBackgroundColor: Color {
+        Color.accentColor
+    }
+}
+
 struct SettingsSidebarView: View {
     @Binding var selectedSection: SettingsSection
     let backAction: () -> Void
@@ -41,37 +84,39 @@ struct SettingsSidebarView: View {
             Button {
                 backAction()
             } label: {
-                Label("Back to app", systemImage: "chevron.left")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
+                SidebarHoverRow(title: "Back to app", systemImage: "chevron.left")
             }
             .buttonStyle(.plain)
             .padding(10)
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("Settings")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 12)
 
-            Divider()
-
-            List(selection: selectedSectionBinding) {
-                Section("Settings") {
-                    ForEach(SettingsSection.allCases) { section in
-                        Label(section.title, systemImage: section.icon)
-                            .tag(section)
+                    VStack(spacing: 6) {
+                        ForEach(SettingsSection.allCases) { section in
+                            Button {
+                                selectedSection = section
+                            } label: {
+                                SidebarHoverRow(
+                                    title: section.title,
+                                    systemImage: section.icon,
+                                    isSelected: selectedSection == section
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 12)
             }
-            .listStyle(.sidebar)
+            .scrollIndicators(.never)
         }
-    }
-
-    private var selectedSectionBinding: Binding<SettingsSection?> {
-        Binding(
-            get: { selectedSection },
-            set: { newValue in
-                if let newValue {
-                    selectedSection = newValue
-                }
-            }
-        )
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 
@@ -103,6 +148,7 @@ struct SettingsView: View {
 
     private let availableFonts = NSFontManager.shared.availableFontFamilies.sorted()
     private let fontSizeOptions = [20, 24, 30, 36, 42, 48, 56, 64, 72, 84, 96]
+    private let settingsControlColumnWidth: CGFloat = 280
 
     private var currentSettings: AppSettings {
         settings.first ?? AppSettings()
@@ -133,7 +179,7 @@ struct SettingsView: View {
     }
 
     private var detailPane: some View {
-        ScrollView {
+        ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(selectedSection.title)
@@ -158,114 +204,169 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
+        .scrollIndicators(.automatic)
     }
 
     private var generalContent: some View {
         VStack(alignment: .leading, spacing: 18) {
-            settingsCard(title: "Playback") {
-                sliderRow(
-                    title: "Autoplay speed",
-                    subtitle: "Control how quickly the active script advances.",
-                    valueText: "\(Int(currentSettings.playbackSpeedWordsPerMinute)) WPM",
-                    value: binding(for: \.playbackSpeedWordsPerMinute) { newValue in
-                        appState.playbackController.applySpeed(newValue)
-                    },
-                    range: 60...260,
-                    step: 5
-                )
+            settingsSection(title: "Playback") {
+                settingsCard {
+                    sliderRow(
+                        title: "Autoplay speed",
+                        subtitle: "Control how quickly the active script advances.",
+                        valueText: "\(Int(currentSettings.playbackSpeedWordsPerMinute)) WPM",
+                        value: binding(for: \.playbackSpeedWordsPerMinute) { newValue in
+                            appState.playbackController.applySpeed(newValue)
+                        },
+                        range: 60...260,
+                        step: 5,
+                        showsDivider: false
+                    )
+                }
             }
 
-            settingsCard(title: "Overlay") {
-                toggleRow(
-                    title: "Show icon in Dock",
-                    subtitle: "Keep TelepromptMe visible in the Dock while it is running.",
-                    isOn: binding(for: \.showDockIcon)
-                )
-                toggleRow(
-                    title: "Show menu bar item",
-                    subtitle: "Keep quick access to TelepromptMe from the macOS menu bar.",
-                    isOn: binding(for: \.showMenuBarItem)
-                )
-                toggleRow(
-                    title: "Keep overlay centered below camera",
-                    subtitle: "Position the overlay under the camera area when it opens.",
-                    isOn: binding(for: \.keepOverlayCentered)
-                )
+            settingsSection(title: "Overlay") {
+                settingsCard {
+                    toggleRow(
+                        title: "Show icon in Dock",
+                        subtitle: "Keep TelepromptMe visible in the Dock while it is running.",
+                        isOn: binding(for: \.showDockIcon)
+                    )
+                    toggleRow(
+                        title: "Show menu bar item",
+                        subtitle: "Keep quick access to TelepromptMe from the macOS menu bar.",
+                        isOn: binding(for: \.showMenuBarItem)
+                    )
+                    toggleRow(
+                        title: "Keep overlay centered below camera",
+                        subtitle: "Position the overlay under the camera area when it opens.",
+                        isOn: binding(for: \.keepOverlayCentered),
+                        showsDivider: false
+                    )
+                }
             }
         }
     }
 
     private var appearanceContent: some View {
         VStack(alignment: .leading, spacing: 18) {
-            settingsCard(title: "Typography") {
-                pickerRow(
-                    title: "Font",
-                    subtitle: "Choose the typeface used inside the overlay.",
-                    selection: binding(for: \.fontName)
-                ) {
-                    ForEach(availableFonts, id: \.self) { fontName in
-                        Text(fontName).tag(fontName)
+            settingsSection(title: "Typography") {
+                settingsCard {
+                    pickerRow(
+                        title: "Font",
+                        subtitle: "Choose the typeface used inside the overlay.",
+                        selection: binding(for: \.fontName)
+                    ) {
+                        ForEach(availableFonts, id: \.self) { fontName in
+                            Text(fontName).tag(fontName)
+                        }
                     }
+
+                    fontSizePickerRow(
+                        title: "Font size",
+                        subtitle: "Choose the teleprompter text size."
+                    )
+
+                    sliderRow(
+                        title: "Line spacing",
+                        subtitle: "Adjust the space between lines in the overlay.",
+                        valueText: "\(Int(currentSettings.lineSpacing)) pt",
+                        value: binding(for: \.lineSpacing),
+                        range: 0...32,
+                        step: 1
+                    )
+
+                    sliderRow(
+                        title: "Overlay opacity",
+                        subtitle: "Control how translucent the overlay background appears.",
+                        valueText: currentSettings.overlayOpacity.formatted(.number.precision(.fractionLength(2))),
+                        value: binding(for: \.overlayOpacity),
+                        range: 0.4...1.0,
+                        step: 0.02,
+                        showsDivider: false
+                    )
                 }
-
-                fontSizePickerRow(
-                    title: "Font size",
-                    subtitle: "Choose the teleprompter text size."
-                )
-
-                sliderRow(
-                    title: "Line spacing",
-                    subtitle: "Adjust the space between lines in the overlay.",
-                    valueText: "\(Int(currentSettings.lineSpacing)) pt",
-                    value: binding(for: \.lineSpacing),
-                    range: 0...32,
-                    step: 1
-                )
-
-                sliderRow(
-                    title: "Overlay opacity",
-                    subtitle: "Control how translucent the overlay background appears.",
-                    valueText: currentSettings.overlayOpacity.formatted(.number.precision(.fractionLength(2))),
-                    value: binding(for: \.overlayOpacity),
-                    range: 0.4...1.0,
-                    step: 0.02
-                )
             }
         }
     }
 
     private var shortcutsContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            settingsCard(title: "Keyboard shortcuts") {
-                ForEach(AppShortcutCommand.allCases) { command in
-                    shortcutRow(for: command)
+            settingsSection(title: "Keyboard Shortcuts") {
+                settingsCard {
+                    shortcutHeaderRow()
+
+                    ForEach(Array(AppShortcutCommand.allCases.enumerated()), id: \.element) { index, command in
+                        shortcutRow(
+                            for: command,
+                            showsDivider: index < AppShortcutCommand.allCases.count - 1
+                        )
+                    }
                 }
             }
         }
     }
 
-    @ViewBuilder
-    private func settingsCard<Content: View>(
-        title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(title)
-                .font(.system(size: 18, weight: .semibold))
-                .padding(.horizontal, 18)
-                .padding(.top, 18)
-                .padding(.bottom, 8)
+    private func shortcutHeaderRow() -> some View {
+        HStack(spacing: 18) {
+            Text("Command")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(spacing: 0) {
-                content()
-            }
+            Text("Keybinding")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: settingsControlColumnWidth, alignment: .leading)
         }
-        .background(cardBackground)
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .modifier(SettingsRowDivider(showsDivider: true))
     }
 
     @ViewBuilder
-    private func toggleRow(title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
-        rowContainer {
+    private func settingsSection<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+
+            content()
+        }
+    }
+
+    @ViewBuilder
+    private func settingsCard<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+
+            VStack(alignment: .leading, spacing: 0) {
+                content()
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func toggleRow(
+        title: String,
+        subtitle: String,
+        isOn: Binding<Bool>,
+        showsDivider: Bool = true
+    ) -> some View {
+        rowContainer(showsDivider: showsDivider) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.system(size: 15, weight: .medium))
@@ -290,26 +391,26 @@ struct SettingsView: View {
         valueText: String,
         value: Binding<Double>,
         range: ClosedRange<Double>,
-        step: Double
+        step: Double,
+        showsDivider: Bool = true
     ) -> some View {
-        rowContainer(alignment: .top) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(title)
-                            .font(.system(size: 15, weight: .medium))
-                        Text(subtitle)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Text(valueText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
+        rowContainer(alignment: .top, showsDivider: showsDivider) {
+            settingsTextColumn(title: title, subtitle: subtitle)
 
-                Slider(value: value, in: range, step: step)
-                    .tint(.blue)
+            Spacer(minLength: 24)
+
+            VStack(alignment: .trailing, spacing: 14) {
+                Text(valueText)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+
+                MinimalSlider(
+                    value: value,
+                    range: range,
+                    step: step
+                )
+                .frame(width: settingsControlColumnWidth)
             }
         }
     }
@@ -322,22 +423,21 @@ struct SettingsView: View {
         @ViewBuilder content: () -> PickerContent
     ) -> some View {
         rowContainer {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.system(size: 15, weight: .medium))
-                Text(subtitle)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-            }
+            settingsTextColumn(title: title, subtitle: subtitle)
 
             Spacer(minLength: 24)
 
-            Picker(title, selection: selection) {
-                content()
+            HStack {
+                Spacer(minLength: 0)
+
+                Picker(title, selection: selection) {
+                    content()
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .controlSize(.large)
             }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .frame(width: 260)
+            .frame(width: settingsControlColumnWidth, alignment: .trailing)
         }
     }
 
@@ -355,11 +455,12 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func shortcutRow(for target: AppShortcutCommand) -> some View {
+    private func shortcutRow(
+        for target: AppShortcutCommand,
+        showsDivider: Bool = true
+    ) -> some View {
         Button {
-            if target.isEditable {
-                editingShortcut = target
-            }
+            editingShortcut = target
         } label: {
             HStack(spacing: 18) {
                 VStack(alignment: .leading, spacing: 6) {
@@ -369,55 +470,49 @@ struct SettingsView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer(minLength: 24)
+                HStack(spacing: 10) {
+                    shortcutBindingView(for: target)
 
-                HStack(spacing: 12) {
-                    shortcutBadge(for: target)
+                    Spacer(minLength: 0)
 
-                    if target.isEditable && isShortcutAssigned(target) {
+                    if isShortcutAssigned(target) {
                         Button {
-                            updateShortcut(target, value: AppShortcut(key: .space, modifiers: []), isAssigned: false)
+                            updateShortcut(target, value: AppShortcut.unassigned, isAssigned: false)
                         } label: {
                             Image(systemName: "trash")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .help("Clear shortcut")
+                        .help("Unassign shortcut")
                     }
                 }
+                .frame(width: settingsControlColumnWidth, alignment: .leading)
             }
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(Color.white.opacity(0.06))
-                .frame(height: 1)
-        }
+        .modifier(SettingsRowDivider(showsDivider: showsDivider))
     }
 
     @ViewBuilder
-    private func shortcutBadge(for target: AppShortcutCommand) -> some View {
+    private func shortcutBindingView(for target: AppShortcutCommand) -> some View {
         if isShortcutAssigned(target) {
-            HStack(spacing: 6) {
-                ForEach(shortcutTokens(for: shortcut(for: target)), id: \.self) { token in
-                    Text(token)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background(
-                            Capsule(style: .continuous)
-                                .fill(Color.white.opacity(0.08))
-                        )
-                }
-            }
+            Text(shortcutGlyphString(for: shortcut(for: target)))
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.08))
+                )
         } else {
             Text("Unassigned")
-                .font(.system(size: 14))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(.secondary)
         }
     }
@@ -425,6 +520,7 @@ struct SettingsView: View {
     @ViewBuilder
     private func rowContainer(
         alignment: VerticalAlignment = .center,
+        showsDivider: Bool = true,
         @ViewBuilder content: () -> some View
     ) -> some View {
         HStack(alignment: alignment, spacing: 18) {
@@ -433,20 +529,18 @@ struct SettingsView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
         .background(Color.clear)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(Color.white.opacity(0.06))
-                .frame(height: 1)
-        }
+        .modifier(SettingsRowDivider(showsDivider: showsDivider))
     }
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(Color.white.opacity(0.05))
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
-            )
+    private func settingsTextColumn(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 15, weight: .medium))
+            Text(subtitle)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var sectionDescription: String {
@@ -468,8 +562,18 @@ struct SettingsView: View {
             return currentSettings.togglePlaybackShortcut
         case .holdToScroll:
             return currentSettings.holdToScrollShortcut
-        case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
-            return target.defaultShortcut
+        case .stopPlayback:
+            return currentSettings.stopPlaybackShortcut
+        case .restartPlayback:
+            return currentSettings.restartPlaybackShortcut
+        case .increaseSpeed:
+            return currentSettings.increaseSpeedShortcut
+        case .decreaseSpeed:
+            return currentSettings.decreaseSpeedShortcut
+        case .stepForward:
+            return currentSettings.stepForwardShortcut
+        case .stepBackward:
+            return currentSettings.stepBackwardShortcut
         }
     }
 
@@ -481,19 +585,53 @@ struct SettingsView: View {
             return currentSettings.togglePlaybackShortcutModifiersRawValue != -1
         case .holdToScroll:
             return (currentSettings.holdToScrollShortcutModifiersRawValue ?? 0) != -1
-        case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
-            return true
+        case .stopPlayback:
+            return currentSettings.stopPlaybackShortcutModifiersRawValue != -1
+        case .restartPlayback:
+            return currentSettings.restartPlaybackShortcutModifiersRawValue != -1
+        case .increaseSpeed:
+            return currentSettings.increaseSpeedShortcutModifiersRawValue != -1
+        case .decreaseSpeed:
+            return currentSettings.decreaseSpeedShortcutModifiersRawValue != -1
+        case .stepForward:
+            return currentSettings.stepForwardShortcutModifiersRawValue != -1
+        case .stepBackward:
+            return currentSettings.stepBackwardShortcutModifiersRawValue != -1
         }
     }
 
-    private func shortcutTokens(for shortcut: AppShortcut) -> [String] {
-        var tokens: [String] = []
-        if shortcut.modifiers.contains(.command) { tokens.append("CMD") }
-        if shortcut.modifiers.contains(.shift) { tokens.append("SHIFT") }
-        if shortcut.modifiers.contains(.option) { tokens.append("OPT") }
-        if shortcut.modifiers.contains(.control) { tokens.append("CTRL") }
-        tokens.append(shortcut.key.label.uppercased())
-        return tokens
+    private func shortcutGlyphString(for shortcut: AppShortcut) -> String {
+        let modifiers = [
+            shortcut.modifiers.contains(.control) ? "⌃" : nil,
+            shortcut.modifiers.contains(.option) ? "⌥" : nil,
+            shortcut.modifiers.contains(.shift) ? "⇧" : nil,
+            shortcut.modifiers.contains(.command) ? "⌘" : nil,
+        ].compactMap { $0 }.joined()
+
+        return modifiers + shortcutKeyGlyph(for: shortcut.key)
+    }
+
+    private func shortcutKeyGlyph(for key: AppShortcut.Key) -> String {
+        switch key {
+        case .space:
+            return "Space"
+        case .return:
+            return "↩"
+        case .upArrow:
+            return "↑"
+        case .downArrow:
+            return "↓"
+        case .commandKey:
+            return "⌘"
+        case .shiftKey:
+            return "⇧"
+        case .optionKey:
+            return "⌥"
+        case .controlKey:
+            return "⌃"
+        default:
+            return key.label.uppercased()
+        }
     }
 
     private func binding<Value>(
@@ -558,8 +696,24 @@ struct SettingsView: View {
         case .holdToScroll:
             settingsModel.holdToScrollShortcut = value
             settingsModel.holdToScrollShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
-        case .stopPlayback, .restartPlayback, .increaseSpeed, .decreaseSpeed, .stepForward, .stepBackward:
-            return
+        case .stopPlayback:
+            settingsModel.stopPlaybackShortcut = value
+            settingsModel.stopPlaybackShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
+        case .restartPlayback:
+            settingsModel.restartPlaybackShortcut = value
+            settingsModel.restartPlaybackShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
+        case .increaseSpeed:
+            settingsModel.increaseSpeedShortcut = value
+            settingsModel.increaseSpeedShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
+        case .decreaseSpeed:
+            settingsModel.decreaseSpeedShortcut = value
+            settingsModel.decreaseSpeedShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
+        case .stepForward:
+            settingsModel.stepForwardShortcut = value
+            settingsModel.stepForwardShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
+        case .stepBackward:
+            settingsModel.stepBackwardShortcut = value
+            settingsModel.stepBackwardShortcutModifiersRawValue = isAssigned ? value.modifiers.rawValue : -1
         }
 
         try? modelContext.save()
@@ -569,6 +723,100 @@ struct SettingsView: View {
     private func syncSettingsIntoAppState() {
         let settingsModel = currentSettingsModel()
         appState.applySettings(settingsModel)
+    }
+}
+
+private struct SettingsRowDivider: ViewModifier {
+    let showsDivider: Bool
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .bottom) {
+            if showsDivider {
+                Rectangle()
+                    .fill(Color.white.opacity(0.06))
+                    .frame(height: 1)
+                    .padding(.horizontal, 18)
+            }
+        }
+    }
+}
+
+private struct MinimalSlider: View {
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    let step: Double
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+    @State private var isDragging = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            let knobSize: CGFloat = 14
+            let trackHeight: CGFloat = 4
+            let availableWidth = max(geometry.size.width - knobSize, 1)
+            let progress = normalizedValue
+            let knobOffset = availableWidth * progress
+
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(trackColor)
+                    .frame(height: trackHeight)
+
+                Capsule(style: .continuous)
+                    .fill(fillColor)
+                    .frame(width: knobOffset + knobSize / 2, height: trackHeight)
+
+                Circle()
+                    .fill(knobColor)
+                    .frame(width: knobSize, height: knobSize)
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.22 : 0.08), radius: isDragging ? 4 : 2, y: 1)
+                    .offset(x: knobOffset)
+            }
+            .frame(height: max(knobSize, 20), alignment: .center)
+            .contentShape(Rectangle())
+            .onHover { isHovering = $0 }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { gesture in
+                        isDragging = true
+                        updateValue(locationX: gesture.location.x, width: geometry.size.width, knobSize: knobSize)
+                    }
+                    .onEnded { gesture in
+                        updateValue(locationX: gesture.location.x, width: geometry.size.width, knobSize: knobSize)
+                        isDragging = false
+                    }
+            )
+        }
+        .frame(height: 20)
+    }
+
+    private var normalizedValue: Double {
+        let clamped = min(max(value, range.lowerBound), range.upperBound)
+        let distance = range.upperBound - range.lowerBound
+        guard distance > 0 else { return 0 }
+        return (clamped - range.lowerBound) / distance
+    }
+
+    private var trackColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.10) : Color.black.opacity(0.10)
+    }
+
+    private var fillColor: Color {
+        isDragging || isHovering ? Color.accentColor.opacity(0.95) : Color.accentColor.opacity(0.8)
+    }
+
+    private var knobColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.96) : Color.white
+    }
+
+    private func updateValue(locationX: CGFloat, width: CGFloat, knobSize: CGFloat) {
+        let usableWidth = max(width - knobSize, 1)
+        let adjustedX = min(max(locationX - knobSize / 2, 0), usableWidth)
+        let ratio = adjustedX / usableWidth
+        let rawValue = range.lowerBound + Double(ratio) * (range.upperBound - range.lowerBound)
+        let steppedValue = (rawValue / step).rounded() * step
+        value = min(max(steppedValue, range.lowerBound), range.upperBound)
     }
 }
 
