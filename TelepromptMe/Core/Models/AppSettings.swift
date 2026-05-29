@@ -475,7 +475,7 @@ final class AppSettings {
     var holdToScrollShortcut: AppShortcut {
         get {
             AppShortcut(
-                key: AppShortcut.Key(rawValue: holdToScrollShortcutKey ?? AppShortcut.Key.space.rawValue) ?? .space,
+                key: AppShortcut.Key(rawValue: holdToScrollShortcutKey ?? AppShortcut.Key.controlKey.rawValue) ?? .controlKey,
                 modifiers: AppShortcut.Modifiers(rawValue: max(holdToScrollShortcutModifiersRawValue ?? 0, 0))
             )
         }
