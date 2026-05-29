@@ -22,6 +22,7 @@
 		A0000000000000000000000C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001C /* SettingsView.swift */; };
 		A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001D /* TeleprompterOverlayView.swift */; };
 		A0000000000000000000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001E /* Assets.xcassets */; };
+		A0000000000000000000000F /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001F /* PersistenceController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		A0000000000000000000001C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A0000000000000000000001D /* TeleprompterOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleprompterOverlayView.swift; sourceTree = "<group>"; };
 		A0000000000000000000001E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A0000000000000000000001F /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +146,14 @@
 			path = Shortcuts;
 			sourceTree = "<group>";
 		};
+		A0000000000000000000003F /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001F /* PersistenceController.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
 		A0000000000000000000003A /* Library */ = {
 			isa = PBXGroup;
 			children = (
@@ -183,6 +193,7 @@
 			children = (
 				A00000000000000000000037 /* Overlay */,
 				A00000000000000000000038 /* Playback */,
+				A0000000000000000000003F /* Persistence */,
 				A00000000000000000000039 /* Shortcuts */,
 			);
 			path = Services;
@@ -271,6 +282,7 @@
 				A0000000000000000000000B /* LibraryView.swift in Sources */,
 				A0000000000000000000000C /* SettingsView.swift in Sources */,
 				A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */,
+				A0000000000000000000000F /* PersistenceController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
