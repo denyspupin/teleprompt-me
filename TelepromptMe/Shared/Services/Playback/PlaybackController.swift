@@ -31,10 +31,16 @@ final class PlaybackController {
     var currentOffset: Double = 0
     var stepUnitPoints: Double = 160
     private(set) var isHoldScrolling = false
+    private var maximumOffset: Double = 0
     private var timer: Timer?
     private var lastTickDate: Date?
 
     func play() {
+        guard maximumOffset > 0 else {
+            finishPlayback()
+            return
+        }
+
         lastTickDate = .now
         startTimerIfNeeded()
         state = .playing
@@ -63,7 +69,7 @@ final class PlaybackController {
     }
 
     func stepForward() {
-        currentOffset += stepUnitPoints
+        currentOffset = min(maximumOffset, currentOffset + stepUnitPoints)
     }
 
     func stepBackward() {
@@ -85,6 +91,15 @@ final class PlaybackController {
 
     func applySpeed(_ newValue: Double) {
         speedWordsPerMinute = min(Layout.maximumSpeed, max(Layout.minimumSpeed, newValue))
+    }
+
+    func updateScrollableMetrics(contentHeight: Double, viewportHeight: Double) {
+        maximumOffset = max(0, contentHeight - viewportHeight)
+        currentOffset = min(currentOffset, maximumOffset)
+
+        if state == .playing && currentOffset >= maximumOffset {
+            finishPlayback()
+        }
     }
 
     func beginHoldScroll() {
@@ -119,6 +134,13 @@ final class PlaybackController {
         timer = nil
     }
 
+    private func finishPlayback() {
+        state = .stopped
+        currentOffset = maximumOffset
+        invalidateTimer()
+        lastTickDate = nil
+    }
+
     private func tick() {
         guard state == .playing || isHoldScrolling else { return }
 
@@ -129,6 +151,10 @@ final class PlaybackController {
         guard elapsed > 0 else { return }
 
         let wordsPerSecond = speedWordsPerMinute / 60
-        currentOffset += wordsPerSecond * Layout.pointsPerWord * elapsed
+        currentOffset = min(maximumOffset, currentOffset + (wordsPerSecond * Layout.pointsPerWord * elapsed))
+
+        if state == .playing && currentOffset >= maximumOffset {
+            finishPlayback()
+        }
     }
 }

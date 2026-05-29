@@ -1,9 +1,20 @@
 import SwiftUI
 
+private struct OverlayTextHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct TeleprompterOverlayView: View {
     private enum Layout {
         static let visibleLineCount: CGFloat = 3
         static let controlHeight: CGFloat = 36
+        static let titleSpacing: CGFloat = 8
+        static let horizontalPadding: CGFloat = 24
+        static let verticalPadding: CGFloat = 18
     }
 
     @Environment(AppState.self) private var appState
@@ -11,16 +22,23 @@ struct TeleprompterOverlayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
-                Label(appState.activeScriptTitle, systemImage: "rectangle.topthird.inset.filled")
-                    .font(.headline)
-                    .lineLimit(1)
+                HStack(alignment: .firstTextBaseline, spacing: Layout.titleSpacing) {
+                    Label(appState.activeScriptTitle, systemImage: "rectangle.topthird.inset.filled")
+                        .font(.headline)
+                        .lineLimit(1)
+
+                    Text(speedLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 controlBar
             }
 
             teleprompterTextViewport
         }
-        .padding(24)
+        .padding(.horizontal, Layout.horizontalPadding)
+        .padding(.vertical, Layout.verticalPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
             .ultraThinMaterial.opacity(appState.settingsSnapshot.overlayOpacity),
@@ -34,6 +52,12 @@ struct TeleprompterOverlayView: View {
         .onChange(of: appState.activeScriptID) { _, _ in
             appState.playbackController.stop()
         }
+        .onPreferenceChange(OverlayTextHeightPreferenceKey.self) { textHeight in
+            appState.playbackController.updateScrollableMetrics(
+                contentHeight: textHeight,
+                viewportHeight: viewportHeight
+            )
+        }
     }
 
     private var teleprompterTextViewport: some View {
@@ -42,6 +66,7 @@ struct TeleprompterOverlayView: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .frame(height: viewportHeight, alignment: .top)
             .clipped()
+            .allowsHitTesting(false)
     }
 
     private var controlBar: some View {
@@ -53,25 +78,8 @@ struct TeleprompterOverlayView: View {
                 appState.togglePlayback()
             }
 
-            controlButton(systemImage: "stop.fill", label: "Stop") {
-                appState.stop()
-            }
-
             controlButton(systemImage: "backward.end.fill", label: "Start Over") {
                 appState.restartPlayback()
-            }
-
-            controlButton(systemImage: "minus", label: "Slower") {
-                appState.playbackController.decreaseSpeed()
-            }
-
-            Text("\(Int(appState.playbackController.speedWordsPerMinute))")
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 36)
-
-            controlButton(systemImage: "plus", label: "Faster") {
-                appState.playbackController.increaseSpeed()
             }
 
             controlButton(systemImage: "xmark", label: "Hide") {
@@ -92,6 +100,10 @@ struct TeleprompterOverlayView: View {
         .help(label)
     }
 
+    private var speedLabel: String {
+        "\(Int(appState.playbackController.speedWordsPerMinute)) WPM"
+    }
+
     private var textContent: some View {
         Text(appState.activeScriptText)
             .font(appState.settingsSnapshot.resolvedFont)
@@ -100,6 +112,14 @@ struct TeleprompterOverlayView: View {
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                GeometryReader { geometry in
+                    Color.clear.preference(
+                        key: OverlayTextHeightPreferenceKey.self,
+                        value: geometry.size.height
+                    )
+                }
+            }
     }
 
     private var viewportHeight: CGFloat {

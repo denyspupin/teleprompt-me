@@ -1,6 +1,11 @@
 import AppKit
 import SwiftUI
 
+private final class OverlayPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
 @MainActor
 final class OverlayWindowManager {
     private enum Layout {
@@ -29,9 +34,9 @@ final class OverlayWindowManager {
                 .environment(appState)
             let hostingController = NSHostingController(rootView: contentView)
 
-            let panel = NSPanel(
+            let panel = OverlayPanel(
                 contentRect: defaultFrame,
-                styleMask: [.nonactivatingPanel, .fullSizeContentView],
+                styleMask: [.borderless, .fullSizeContentView],
                 backing: .buffered,
                 defer: false
             )
@@ -46,6 +51,7 @@ final class OverlayWindowManager {
             panel.backgroundColor = .clear
             panel.isOpaque = false
             panel.hasShadow = true
+            panel.becomesKeyOnlyIfNeeded = false
             panel.contentViewController = hostingController
 
             window = panel
@@ -56,7 +62,7 @@ final class OverlayWindowManager {
         }
 
         updateInteractivity()
-        window?.orderFrontRegardless()
+        window?.makeKeyAndOrderFront(nil)
     }
 
     func hide() {

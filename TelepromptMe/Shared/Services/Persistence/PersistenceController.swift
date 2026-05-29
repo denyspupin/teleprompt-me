@@ -39,6 +39,20 @@ final class PersistenceController {
         try context.save()
     }
 
+    func loadSettings() throws -> AppSettings {
+        var descriptor = FetchDescriptor<AppSettings>()
+        descriptor.fetchLimit = 1
+
+        if let settings = try modelContainer.mainContext.fetch(descriptor).first {
+            return settings
+        }
+
+        let defaults = AppSettings()
+        modelContainer.mainContext.insert(defaults)
+        try modelContainer.mainContext.save()
+        return defaults
+    }
+
     private static func makeStoreURL() throws -> URL {
         let fileManager = FileManager.default
         let appSupportURL = try fileManager.url(
