@@ -23,7 +23,7 @@ struct TeleprompterOverlayView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
                 HStack(alignment: .firstTextBaseline, spacing: Layout.titleSpacing) {
-                    Label(appState.activeScriptTitle, systemImage: "rectangle.topthird.inset.filled")
+                    Label(appState.activeScriptTitle, systemImage: "text.document")
                         .font(.headline)
                         .lineLimit(1)
 
@@ -82,7 +82,7 @@ struct TeleprompterOverlayView: View {
                 appState.restartPlayback()
             }
 
-            controlButton(systemImage: "xmark", label: "Hide") {
+            controlButton(systemImage: "eye.slash.fill", label: "Hide") {
                 appState.hideOverlay()
             }
         }
