@@ -16,7 +16,7 @@ struct TelepromptMeApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Library") {
+        WindowGroup("") {
             LibraryView()
                 .environment(appState)
         }

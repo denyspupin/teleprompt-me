@@ -185,6 +185,7 @@ struct LibraryView: View {
 
     private var libraryContent: some View {
         VStack(alignment: .leading, spacing: 20) {
+            @State var isCreateNewDocHovered: Bool = false
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(sectionTitle)
@@ -195,26 +196,23 @@ struct LibraryView: View {
                 }
 
                 Spacer()
-
-                Button {
-                    createDocumentAndOpen()
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.06))
-
-                        Circle()
-                            .strokeBorder(Color.white.opacity(0.08))
-
-                        Image(systemName: "square.and.pencil")
-                        .font(.system(size: 16, weight: .regular))
-                            .foregroundStyle(Color.primary.opacity(0.88))
-                    }
-                    .frame(width: 36, height: 36, alignment: .center)
-                    .contentShape(Circle())
+              
+              Button(action: createDocumentAndOpen) {
+                ZStack {
+                  Circle().opacity(0)
+                  Label("New Script", systemImage: "square.and.pencil")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 16))
                 }
-                .buttonStyle(.plain)
-                .help("New Script")
+              }
+              .frame(width: 40, height: 40, alignment: .center)
+              .buttonSizing(.fitted)
+              .buttonBorderShape(.circle)
+              .onHover { isHovered in
+                isCreateNewDocHovered = isHovered
+              }
+              .glassEffect()
+              .help("New Script")
             }
 
             if filteredDocuments.isEmpty {
