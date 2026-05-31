@@ -46,9 +46,9 @@ struct LibraryView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(overlayButtonTitle) {
-                        appState.toggleOverlay()
-                    }
+                  Button(action: appState.toggleOverlay) {
+                    Label(overlayButtonTitle, systemImage: appState.isOverlayVisible ? "eye.slash.fill" : "eye.fill").labelStyle(.titleAndIcon)
+                  }
                 }
             }
             .onAppear {
@@ -204,13 +204,13 @@ struct LibraryView: View {
                             .fill(Color.white.opacity(0.06))
 
                         Circle()
-                            .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                            .strokeBorder(Color.white.opacity(0.08))
 
                         Image(systemName: "square.and.pencil")
-                            .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 16, weight: .regular))
                             .foregroundStyle(Color.primary.opacity(0.88))
                     }
-                    .frame(width: 36, height: 36)
+                    .frame(width: 36, height: 36, alignment: .center)
                     .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
