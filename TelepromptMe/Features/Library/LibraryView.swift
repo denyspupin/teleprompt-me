@@ -10,21 +10,9 @@ struct LibraryView: View {
     @Query(sort: \ScriptDocument.updatedAt, order: .reverse) private var documents: [ScriptDocument]
     @State private var draftTitle = ""
     @State private var draftText = ""
-    @State private var hoveredAction: HoveredAction?
+    @State private var hoveredAction: LibraryDocumentAction?
     @State private var selectedSettingsSection: SettingsSection = .general
-    @FocusState private var focusedEditor: EditorFocus?
-
-    private enum EditorFocus: Hashable {
-        case title
-        case body
-    }
-
-    private enum HoveredAction: Hashable {
-        case favorite(String)
-        case activate(String)
-        case edit(String)
-        case delete(String)
-    }
+    @FocusState private var focusedEditor: ScriptEditorFocus?
 
     var body: some View {
         NavigationSplitView {
@@ -226,76 +214,15 @@ struct LibraryView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(filteredDocuments, id: \.id) { document in
-                            VStack(alignment: .leading, spacing: 10) {
-                                HStack(alignment: .top, spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(document.title)
-                                            .font(.headline)
-                                            .foregroundStyle(.primary)
-                                            .lineLimit(1)
-
-                                        Text(document.plainText.isEmpty ? "Empty script" : document.plainText)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                            .truncationMode(.tail)
-                                    }
-
-                                    Spacer()
-
-                                    HStack(spacing: 8) {
-                                        quickActionButton(
-                                            id: .favorite(document.id),
-                                            systemImage: document.isFavorite ? "star.fill" : "star",
-                                            accessibilityLabel: document.isFavorite ? "Remove from favorites" : "Add to favorites"
-                                        ) {
-                                            toggleFavorite(for: document)
-                                        }
-
-                                        quickActionButton(
-                                            id: .activate(document.id),
-                                            systemImage: "play.fill",
-                                            accessibilityLabel: "Show in teleprompter"
-                                        ) {
-                                            activate(document: document)
-                                        }
-
-                                        quickActionButton(
-                                            id: .edit(document.id),
-                                            systemImage: "pencil",
-                                            accessibilityLabel: "Edit script"
-                                        ) {
-                                            open(document: document)
-                                        }
-
-                                        quickActionButton(
-                                            id: .delete(document.id),
-                                            systemImage: "trash",
-                                            accessibilityLabel: "Delete script"
-                                        ) {
-                                            delete(document: document)
-                                        }
-                                    }
-                                }
-
-                                HStack {
-                                    Text(relativeDate(for: document.updatedAt))
-                                    Spacer()
-                                    Text("\(wordCount(for: document.plainText)) words")
-                                }
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(contentCard)
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    delete(document: document)
-                                } label: {
-                                    Label("Delete Script", systemImage: "trash")
-                                }
-                            }
+                            LibraryDocumentCard(
+                                document: document,
+                                hoveredAction: hoveredAction,
+                                onHoverActionChange: { hoveredAction = $0 },
+                                onToggleFavorite: { toggleFavorite(for: document) },
+                                onActivate: { activate(document: document) },
+                                onEdit: { open(document: document) },
+                                onDelete: { delete(document: document) }
+                            )
                         }
                     }
                 }
@@ -304,66 +231,15 @@ struct LibraryView: View {
     }
 
     private func editorContent(for document: ScriptDocument) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Button {
-                    appState.selectedDocumentID = nil
-                } label: {
-                    Label("Back", systemImage: "chevron.left")
-                }
-                .buttonStyle(.borderless)
-
-                Spacer()
-
-                if #available(macOS 15.2, *) {
-                    Button("Writing Tools") {
-                        presentWritingTools()
-                    }
-                    .buttonStyle(.bordered)
-                }
-
-                Button(role: .destructive) {
-                    delete(document: document)
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-                .buttonStyle(.bordered)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("Script title", text: $draftTitle)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .writingToolsBehavior(.complete)
-                    .focused($focusedEditor, equals: .title)
-
-                HStack(spacing: 12) {
-                    Text("\(wordCount(for: draftText)) words")
-                    Text("\(draftText.count) characters")
-                    Text("Updated \(relativeDate(for: document.updatedAt))")
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-
-            TextEditor(text: $draftText)
-                .font(.system(size: 18))
-                .scrollContentBackground(.hidden)
-                .writingToolsBehavior(.complete)
-                .focused($focusedEditor, equals: .body)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color(nsColor: .textBackgroundColor))
-                )
-
-            Text("Changes are saved automatically. Apple Intelligence Writing Tools are available from the text controls.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .onAppear {
-            focusedEditor = .body
-        }
+        ScriptEditorView(
+            document: document,
+            draftTitle: $draftTitle,
+            draftText: $draftText,
+            focusedEditor: $focusedEditor,
+            onBack: { appState.selectedDocumentID = nil },
+            onDelete: { delete(document: document) },
+            onPresentWritingTools: presentWritingTools
+        )
     }
 
     private var settingsContent: some View {
@@ -373,15 +249,6 @@ struct LibraryView: View {
 
             Spacer()
         }
-    }
-
-    private var contentCard: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(Color.white.opacity(0.03))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
-            )
     }
 
     private var currentSection: AppState.SidebarItem {
@@ -560,47 +427,6 @@ struct LibraryView: View {
     private func toggleFavorite(for document: ScriptDocument) {
         document.isFavorite.toggle()
         try? modelContext.save()
-    }
-
-    private func quickActionButton(
-        id: HoveredAction,
-        systemImage: String,
-        accessibilityLabel: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        let isHovered = hoveredAction == id
-
-        return Button(action: action) {
-            ZStack {
-                Circle()
-                    .fill(isHovered ? Color.accentColor.opacity(0.32) : Color.white.opacity(0.06))
-
-                Circle()
-                    .strokeBorder(isHovered ? Color.accentColor.opacity(0.75) : Color.white.opacity(0.08), lineWidth: 1)
-
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isHovered ? Color.white : Color.primary.opacity(0.88))
-            }
-            .frame(width: 30, height: 30)
-            .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .scaleEffect(isHovered ? 1.06 : 1)
-        .shadow(color: isHovered ? Color.accentColor.opacity(0.28) : .clear, radius: 8, y: 2)
-        .animation(.easeOut(duration: 0.14), value: isHovered)
-        .onHover { isHovering in
-            hoveredAction = isHovering ? id : (hoveredAction == id ? nil : hoveredAction)
-        }
-        .help(accessibilityLabel)
-    }
-
-    private func wordCount(for text: String) -> Int {
-        text.split(whereSeparator: \.isWhitespace).count
-    }
-
-    private func relativeDate(for date: Date) -> String {
-        date.formatted(.relative(presentation: .named))
     }
 
     private func presentWritingTools() {
