@@ -12,7 +12,10 @@ struct LibraryView: View {
     @State private var draftText = ""
     @State private var hoveredAction: LibraryDocumentAction?
     @State private var selectedSettingsSection: SettingsSection = .general
+    @State private var editingCollectionID: String?
+    @State private var draftCollectionName = ""
     @FocusState private var focusedEditor: ScriptEditorFocus?
+    @FocusState private var focusedCollectionID: String?
 
     var body: some View {
         NavigationSplitView {
@@ -78,7 +81,12 @@ struct LibraryView: View {
                         )
                     }
 
-                    sidebarSection(title: "Collections") {
+                    sidebarSection(
+                        title: "Collections",
+                        actionSystemImage: "plus",
+                        actionHelp: "New Collection",
+                        action: createCollection
+                    ) {
                         if collections.isEmpty {
                             Text("No collections yet")
                                 .foregroundStyle(.secondary)
@@ -86,11 +94,7 @@ struct LibraryView: View {
                                 .padding(.vertical, 6)
                         } else {
                             ForEach(collections) { collection in
-                                sidebarButton(
-                                    title: collection.name,
-                                    systemImage: "folder",
-                                    item: .collection(collection.id)
-                                )
+                                collectionRow(for: collection)
                             }
                         }
                     }
@@ -118,13 +122,31 @@ struct LibraryView: View {
     @ViewBuilder
     private func sidebarSection<Content: View>(
         title: String,
+        actionSystemImage: String? = nil,
+        actionHelp: String? = nil,
+        action: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                if let actionSystemImage, let action {
+                    Button(action: action) {
+                        Image(systemName: actionSystemImage)
+                            .font(.system(size: 11, weight: .semibold))
+                            .frame(width: 22, height: 22)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(actionHelp ?? "")
+                }
+            }
+            .padding(.horizontal, 12)
 
             VStack(spacing: 6) {
                 content()
@@ -147,6 +169,56 @@ struct LibraryView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func collectionRow(for collection: ScriptCollection) -> some View {
+        if editingCollectionID == collection.id {
+            HStack(spacing: 8) {
+                Image(systemName: "folder")
+                    .foregroundStyle(.secondary)
+
+                TextField("Collection name", text: $draftCollectionName)
+                    .textFieldStyle(.plain)
+                    .focused($focusedCollectionID, equals: collection.id)
+                    .onSubmit {
+                        saveCollectionName(collection)
+                    }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.16))
+            }
+            .onAppear {
+                draftCollectionName = collection.name
+                focusedCollectionID = collection.id
+            }
+            .onChange(of: focusedCollectionID) { _, focusedID in
+                if focusedID != collection.id {
+                    saveCollectionName(collection)
+                }
+            }
+        } else {
+            Button {
+                appState.selectedSidebarItem = .collection(collection.id)
+            } label: {
+                SidebarHoverRow(
+                    title: collection.name,
+                    systemImage: "folder",
+                    isSelected: currentSection == .collection(collection.id)
+                )
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(
+                TapGesture(count: 2)
+                    .onEnded {
+                        beginEditing(collection)
+                    }
+            )
+        }
     }
 
     private var settingsSidebar: some View {
@@ -345,10 +417,50 @@ struct LibraryView: View {
         draftText = document.plainText
     }
 
+    private func createCollection() {
+        let newCollection = ScriptCollection(name: "Untitled Collection")
+        modelContext.insert(newCollection)
+        appState.selectedSidebarItem = .collection(newCollection.id)
+        beginEditing(newCollection)
+        try? modelContext.save()
+    }
+
+    private func beginEditing(_ collection: ScriptCollection) {
+        editingCollectionID = collection.id
+        draftCollectionName = collection.name
+
+        DispatchQueue.main.async {
+            focusedCollectionID = collection.id
+        }
+    }
+
+    private func saveCollectionName(_ collection: ScriptCollection) {
+        guard editingCollectionID == collection.id else { return }
+
+        let trimmedName = draftCollectionName.trimmingCharacters(in: .whitespacesAndNewlines)
+        collection.name = trimmedName.isEmpty ? "Untitled Collection" : trimmedName
+        editingCollectionID = nil
+        focusedCollectionID = nil
+        draftCollectionName = ""
+        try? modelContext.save()
+    }
+
     private func createDocumentAndOpen() {
-        let newDocument = ScriptDocument(title: "Untitled Script", plainText: "")
+        let selectedCollection: ScriptCollection?
+
+        if case .collection(let collectionID) = currentSection {
+            selectedCollection = collections.first(where: { $0.id == collectionID })
+        } else {
+            selectedCollection = nil
+        }
+
+        let newDocument = ScriptDocument(title: "Untitled Script", plainText: "", collection: selectedCollection)
         modelContext.insert(newDocument)
-        appState.selectedSidebarItem = .allScripts
+        if let selectedCollection {
+            appState.selectedSidebarItem = .collection(selectedCollection.id)
+        } else {
+            appState.selectedSidebarItem = .allScripts
+        }
         appState.selectedDocumentID = newDocument.id
         appState.activateScript(id: newDocument.id, title: newDocument.title, text: newDocument.plainText)
         syncDraftFromSelection()
