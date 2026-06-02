@@ -23,6 +23,8 @@ final class PlaybackController {
         static let minimumSpeed: Double = 60
         static let maximumSpeed: Double = 260
         static let speedStep: Double = 10
+        static let followSmoothing: Double = 7
+        static let maximumFollowAdvancePerSecond: Double = 180
     }
 
     var state: State = .stopped
@@ -32,6 +34,7 @@ final class PlaybackController {
     var stepUnitPoints: Double = 160
     private(set) var isHoldScrolling = false
     private var maximumOffset: Double = 0
+    private var followTargetOffset: Double?
     private var timer: Timer?
     private var lastTickDate: Date?
 
@@ -55,6 +58,7 @@ final class PlaybackController {
     func stop() {
         state = .stopped
         currentOffset = 0
+        followTargetOffset = nil
         invalidateTimer()
         lastTickDate = nil
     }
@@ -96,9 +100,29 @@ final class PlaybackController {
     func updateScrollableMetrics(contentHeight: Double, viewportHeight: Double) {
         maximumOffset = max(0, contentHeight - viewportHeight)
         currentOffset = min(currentOffset, maximumOffset)
+        if let followTargetOffset {
+            self.followTargetOffset = min(followTargetOffset, maximumOffset)
+        }
 
         if state == .playing && currentOffset >= maximumOffset {
             finishPlayback()
+        }
+    }
+
+    func follow(progress: Double) {
+        let clampedProgress = min(1, max(0, progress))
+        let targetOffset = maximumOffset * clampedProgress
+        followTargetOffset = min(maximumOffset, max(currentOffset, targetOffset))
+        lastTickDate = .now
+        startTimerIfNeeded()
+    }
+
+    func stopFollowing() {
+        followTargetOffset = nil
+
+        if state != .playing && !isHoldScrolling {
+            invalidateTimer()
+            lastTickDate = nil
         }
     }
 
@@ -142,7 +166,7 @@ final class PlaybackController {
     }
 
     private func tick() {
-        guard state == .playing || isHoldScrolling else { return }
+        guard state == .playing || isHoldScrolling || followTargetOffset != nil else { return }
 
         let now = Date()
         let elapsed = now.timeIntervalSince(lastTickDate ?? now)
@@ -150,11 +174,30 @@ final class PlaybackController {
 
         guard elapsed > 0 else { return }
 
-        let wordsPerSecond = speedWordsPerMinute / 60
-        currentOffset = min(maximumOffset, currentOffset + (wordsPerSecond * Layout.pointsPerWord * elapsed))
+        if state == .playing || isHoldScrolling {
+            let wordsPerSecond = speedWordsPerMinute / 60
+            currentOffset = min(maximumOffset, currentOffset + (wordsPerSecond * Layout.pointsPerWord * elapsed))
+        }
+
+        if let target = followTargetOffset {
+            let distance = target - currentOffset
+            if abs(distance) < 0.5 {
+                currentOffset = target
+                followTargetOffset = nil
+            } else if distance > 0 {
+                let easedStep = distance * min(1, Layout.followSmoothing * elapsed)
+                let cappedStep = min(easedStep, Layout.maximumFollowAdvancePerSecond * elapsed)
+                currentOffset = min(maximumOffset, currentOffset + max(0.5, cappedStep))
+            } else {
+                followTargetOffset = nil
+            }
+        }
 
         if state == .playing && currentOffset >= maximumOffset {
             finishPlayback()
+        } else if state != .playing && !isHoldScrolling && followTargetOffset == nil {
+            invalidateTimer()
+            lastTickDate = nil
         }
     }
 }

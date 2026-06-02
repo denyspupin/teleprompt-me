@@ -28,6 +28,11 @@
 		A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000088 /* LibraryDocumentCard.swift */; };
 		A00000000000000000000087 /* ScriptFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000089 /* ScriptFormatting.swift */; };
 		A0000000000000000000008A /* ScriptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000008B /* ScriptEditorView.swift */; };
+		A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* SpeechRecognitionModel.swift */; };
+		A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000092 /* SpeechRecognitionEngine.swift */; };
+		A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */; };
+		A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000094 /* ScriptProgressMatcher.swift */; };
+		A00000000000000000000090 /* SpeechFollowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* SpeechFollowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +58,12 @@
 		A00000000000000000000088 /* LibraryDocumentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDocumentCard.swift; sourceTree = "<group>"; };
 		A00000000000000000000089 /* ScriptFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptFormatting.swift; sourceTree = "<group>"; };
 		A0000000000000000000008B /* ScriptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEditorView.swift; sourceTree = "<group>"; };
+		A00000000000000000000091 /* SpeechRecognitionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionModel.swift; sourceTree = "<group>"; };
+		A00000000000000000000092 /* SpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A00000000000000000000094 /* ScriptProgressMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptProgressMatcher.swift; sourceTree = "<group>"; };
+		A00000000000000000000095 /* SpeechFollowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechFollowController.swift; sourceTree = "<group>"; };
+		A00000000000000000000097 /* TelepromptMe.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TelepromptMe.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +88,7 @@
 		A00000000000000000000031 /* TelepromptMe */ = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000097 /* TelepromptMe.entitlements */,
 				A00000000000000000000033 /* App */,
 				A00000000000000000000034 /* Core */,
 				A00000000000000000000035 /* Features */,
@@ -190,6 +202,7 @@
 				A00000000000000000000015 /* ScriptDocument.swift */,
 				A00000000000000000000016 /* ScriptCollection.swift */,
 				A00000000000000000000017 /* AppSettings.swift */,
+				A00000000000000000000091 /* SpeechRecognitionModel.swift */,
 				A00000000000000000000089 /* ScriptFormatting.swift */,
 			);
 			path = Models;
@@ -201,6 +214,7 @@
 				A00000000000000000000037 /* Overlay */,
 				A00000000000000000000038 /* Playback */,
 				A0000000000000000000003F /* Persistence */,
+				A00000000000000000000096 /* Speech */,
 				A00000000000000000000039 /* Shortcuts */,
 			);
 			path = Services;
@@ -212,6 +226,17 @@
 				A0000000000000000000001F /* PersistenceController.swift */,
 			);
 			path = Persistence;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000096 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000092 /* SpeechRecognitionEngine.swift */,
+				A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */,
+				A00000000000000000000094 /* ScriptProgressMatcher.swift */,
+				A00000000000000000000095 /* SpeechFollowController.swift */,
+			);
+			path = Speech;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -290,8 +315,13 @@
 				A00000000000000000000005 /* ScriptDocument.swift in Sources */,
 				A00000000000000000000006 /* ScriptCollection.swift in Sources */,
 				A00000000000000000000007 /* AppSettings.swift in Sources */,
+				A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */,
 				A00000000000000000000008 /* PlaybackController.swift in Sources */,
 				A00000000000000000000009 /* OverlayWindowManager.swift in Sources */,
+				A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */,
+				A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */,
+				A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */,
+				A00000000000000000000090 /* SpeechFollowController.swift in Sources */,
 				A0000000000000000000000A /* ShortcutManager.swift in Sources */,
 				A0000000000000000000000B /* LibraryView.swift in Sources */,
 				A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */,
@@ -315,6 +345,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = TelepromptMe/TelepromptMe.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -346,6 +377,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = TelepromptMe/TelepromptMe.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;

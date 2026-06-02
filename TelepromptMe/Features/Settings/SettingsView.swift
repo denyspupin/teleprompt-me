@@ -56,6 +56,8 @@ struct SettingsView: View {
                 switch selectedSection {
                 case .general:
                     generalContent
+                case .aiModels:
+                    aiModelsContent
                 case .appearance:
                     appearanceContent
                 case .shortcuts:
@@ -152,6 +154,82 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var aiModelsContent: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            settingsSection(title: "Speech Recognition") {
+                settingsCard {
+                    pickerRow(
+                        title: "Recognition engine",
+                        subtitle: "Choose the local model used to follow your spoken script.",
+                        selection: binding(for: \.selectedSpeechEngineID)
+                    ) {
+                        ForEach(SpeechRecognitionEngineID.allCases) { engine in
+                            Text(engine.title).tag(engine.rawValue)
+                        }
+                    }
+
+                    pickerRow(
+                        title: "Language",
+                        subtitle: "Pick the language the built-in recognizer should listen for.",
+                        selection: binding(for: \.selectedSpeechLocaleIdentifier)
+                    ) {
+                        ForEach(speechLocaleOptions, id: \.identifier) { locale in
+                            Text(locale.localizedString(forIdentifier: locale.identifier) ?? locale.identifier)
+                                .tag(locale.identifier)
+                        }
+                    }
+
+                    toggleRow(
+                        title: "Start voice follow with overlay",
+                        subtitle: "Begin listening automatically whenever the teleprompter overlay opens.",
+                        isOn: binding(for: \.isVoiceFollowEnabledByDefault)
+                    )
+
+                    sliderRow(
+                        title: "Matching sensitivity",
+                        subtitle: "Higher values require closer matches before the script advances.",
+                        valueText: currentSettings.speechFollowSensitivity.formatted(.number.precision(.fractionLength(2))),
+                        value: binding(for: \.speechFollowSensitivity),
+                        range: 0.45...0.9,
+                        step: 0.01,
+                        showsDivider: false
+                    )
+                }
+            }
+
+            settingsSection(title: "Available Models") {
+                settingsCard {
+                    modelRow(
+                        title: SpeechRecognitionEngineID.appleBuiltIn.title,
+                        subtitle: SpeechRecognitionEngineID.appleBuiltIn.subtitle,
+                        status: "Built in",
+                        showsDivider: false
+                    )
+                }
+            }
+        }
+    }
+
+    private var speechLocaleOptions: [Locale] {
+        let defaults = [
+            Locale(identifier: "en_US"),
+            Locale(identifier: "en_GB"),
+            Locale(identifier: "de_DE"),
+            Locale(identifier: "es_ES"),
+            Locale(identifier: "fr_FR"),
+        ]
+
+        guard !defaults.map(\.identifier).contains(currentSettings.selectedSpeechLocaleIdentifier) else {
+            return defaults
+        }
+
+        return [Locale(identifier: currentSettings.selectedSpeechLocaleIdentifier)] + defaults
+    }
+
+    private var supportedSpeechLocaleIdentifiers: Set<String> {
+        Set(speechLocaleOptions.map(\.identifier))
     }
 
     private var shortcutsContent: some View {
@@ -407,10 +485,33 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
+    private func modelRow(
+        title: String,
+        subtitle: String,
+        status: String,
+        showsDivider: Bool = true
+    ) -> some View {
+        rowContainer(showsDivider: showsDivider) {
+            settingsTextColumn(title: title, subtitle: subtitle)
+
+            Spacer(minLength: 24)
+
+            Text(status)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.green)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.green.opacity(0.12), in: Capsule(style: .continuous))
+        }
+    }
+
     private var sectionDescription: String {
         switch selectedSection {
         case .general:
             return "Core app behavior and overlay defaults."
+        case .aiModels:
+            return "Manage local transcription models and voice-follow behavior."
         case .appearance:
             return "Adjust how your teleprompter looks on screen."
         case .shortcuts:
@@ -586,6 +687,10 @@ struct SettingsView: View {
 
     private func syncSettingsIntoAppState() {
         let settingsModel = currentSettingsModel()
+        if !supportedSpeechLocaleIdentifiers.contains(settingsModel.selectedSpeechLocaleIdentifier) {
+            settingsModel.selectedSpeechLocaleIdentifier = "en_US"
+            try? modelContext.save()
+        }
         appState.applySettings(settingsModel)
     }
 }
