@@ -9,7 +9,6 @@ final class ScriptDocument {
     var isFavorite: Bool
     var createdAt: Date
     var updatedAt: Date
-    var tagNames: [String]
     var collection: ScriptCollection?
 
     init(
@@ -19,7 +18,6 @@ final class ScriptDocument {
         isFavorite: Bool = false,
         createdAt: Date = .now,
         updatedAt: Date = .now,
-        tagNames: [String] = [],
         collection: ScriptCollection? = nil
     ) {
         self.id = id
@@ -28,7 +26,6 @@ final class ScriptDocument {
         self.isFavorite = isFavorite
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.tagNames = tagNames
         self.collection = collection
     }
 }

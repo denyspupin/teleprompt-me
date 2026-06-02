@@ -7,7 +7,6 @@ final class AppState {
     enum SidebarItem: Hashable {
         case allScripts
         case favorites
-        case tags
         case collection(String)
         case settings
     }

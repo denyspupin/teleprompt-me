@@ -76,11 +76,6 @@ struct LibraryView: View {
                             systemImage: "star",
                             item: .favorites
                         )
-                        sidebarButton(
-                            title: "Tags",
-                            systemImage: "tag",
-                            item: .tags
-                        )
                     }
 
                     sidebarSection(title: "Collections") {
@@ -268,8 +263,6 @@ struct LibraryView: View {
             return documents
         case .favorites:
             return documents.filter(\.isFavorite)
-        case .tags:
-            return documents.filter { !$0.tagNames.isEmpty }
         case .collection(let collectionID):
             return documents.filter { $0.collection?.id == collectionID }
         case .settings:
@@ -288,8 +281,6 @@ struct LibraryView: View {
             return "All Scripts"
         case .favorites:
             return "Favorites"
-        case .tags:
-            return "Tags"
         case .collection(let collectionID):
             return collections.first(where: { $0.id == collectionID })?.name ?? "Collection"
         case .settings:
@@ -303,8 +294,6 @@ struct LibraryView: View {
             return "Browse every script in your library."
         case .favorites:
             return "Quick access to the scripts you mark as favorites."
-        case .tags:
-            return "Scripts that already have tags assigned."
         case .collection:
             return "Scripts inside the selected collection."
         case .settings:
@@ -318,8 +307,6 @@ struct LibraryView: View {
             return "Create your first script to get started."
         case .favorites:
             return "Favorite scripts will appear here."
-        case .tags:
-            return "Tagged scripts will appear here."
         case .collection:
             return "This collection does not have any scripts yet."
         case .settings:
