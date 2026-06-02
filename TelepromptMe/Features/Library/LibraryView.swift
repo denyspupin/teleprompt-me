@@ -5,6 +5,7 @@ import AppKit
 struct LibraryView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Query private var settings: [AppSettings]
     @Query(sort: \ScriptCollection.name) private var collections: [ScriptCollection]
     @Query(sort: \ScriptDocument.updatedAt, order: .reverse) private var documents: [ScriptDocument]
@@ -14,6 +15,8 @@ struct LibraryView: View {
     @State private var selectedSettingsSection: SettingsSection = .general
     @State private var editingCollectionID: String?
     @State private var draftCollectionName = ""
+    @State private var isCollectionsCollapsed = false
+    @State private var hoveredSidebarSection: String?
     @FocusState private var focusedEditor: ScriptEditorFocus?
     @FocusState private var focusedCollectionID: String?
 
@@ -83,9 +86,12 @@ struct LibraryView: View {
 
                     sidebarSection(
                         title: "Collections",
+                        systemImage: "folder",
                         actionSystemImage: "plus",
                         actionHelp: "New Collection",
-                        action: createCollection
+                        action: createCollection,
+                        isCollapsed: isCollectionsCollapsed,
+                        onToggleCollapse: toggleCollectionsCollapsed
                     ) {
                         if collections.isEmpty {
                             Text("No collections yet")
@@ -122,18 +128,34 @@ struct LibraryView: View {
     @ViewBuilder
     private func sidebarSection<Content: View>(
         title: String,
+        systemImage: String? = nil,
         actionSystemImage: String? = nil,
         actionHelp: String? = nil,
         action: (() -> Void)? = nil,
+        isCollapsed: Bool = false,
+        onToggleCollapse: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    if let systemImage {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 14)
+                    }
 
-                Spacer()
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onToggleCollapse?()
+                }
 
                 if let actionSystemImage, let action {
                     Button(action: action) {
@@ -146,10 +168,26 @@ struct LibraryView: View {
                     .help(actionHelp ?? "")
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.leading, 12)
+            .padding(.trailing, 2)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity)
+            .background {
+                if hoveredSidebarSection == title, onToggleCollapse != nil {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(headerHoverBackgroundColor)
+                }
+            }
+            .contentShape(Rectangle())
+            .onHover { isHovered in
+                hoveredSidebarSection = isHovered ? title : nil
+            }
+            .animation(.easeOut(duration: 0.12), value: hoveredSidebarSection)
 
-            VStack(spacing: 6) {
-                content()
+            if !isCollapsed {
+                VStack(spacing: 6) {
+                    content()
+                }
             }
         }
     }
@@ -175,22 +213,23 @@ struct LibraryView: View {
     private func collectionRow(for collection: ScriptCollection) -> some View {
         if editingCollectionID == collection.id {
             HStack(spacing: 8) {
-                Image(systemName: "folder")
-                    .foregroundStyle(.secondary)
-
                 TextField("Collection name", text: $draftCollectionName)
                     .textFieldStyle(.plain)
                     .focused($focusedCollectionID, equals: collection.id)
                     .onSubmit {
                         saveCollectionName(collection)
                     }
+                    .onExitCommand {
+                        cancelCollectionRename()
+                    }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 10)
+            .padding(.leading, 26)
+            .padding(.trailing, 10)
             .padding(.vertical, 6)
             .background {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.16))
+                    .fill(selectedBackgroundColor)
             }
             .onAppear {
                 draftCollectionName = collection.name
@@ -202,16 +241,13 @@ struct LibraryView: View {
                 }
             }
         } else {
-            Button {
-                appState.selectedSidebarItem = .collection(collection.id)
-            } label: {
-                SidebarHoverRow(
-                    title: collection.name,
-                    systemImage: "folder",
-                    isSelected: currentSection == .collection(collection.id)
-                )
-            }
-            .buttonStyle(.plain)
+            CollectionSidebarRow(
+                title: collection.name,
+                isSelected: currentSection == .collection(collection.id),
+                onSelect: { appState.selectedSidebarItem = .collection(collection.id) },
+                onRename: { beginEditing(collection) },
+                onDelete: { delete(collection: collection) }
+            )
             .simultaneousGesture(
                 TapGesture(count: 2)
                     .onEnded {
@@ -394,8 +430,31 @@ struct LibraryView: View {
         settings.first
     }
 
+    private var headerHoverBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.08)
+        default:
+            return Color.black.opacity(0.06)
+        }
+    }
+
+    private var selectedBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.1)
+        default:
+            return Color.black.opacity(0.08)
+        }
+    }
+
     private func normalizeSelection() {
         if appState.selectedSidebarItem == nil {
+            appState.selectedSidebarItem = .allScripts
+        }
+
+        if case .collection(let collectionID) = appState.selectedSidebarItem,
+           !collections.contains(where: { $0.id == collectionID }) {
             appState.selectedSidebarItem = .allScripts
         }
     }
@@ -420,12 +479,17 @@ struct LibraryView: View {
     private func createCollection() {
         let newCollection = ScriptCollection(name: "Untitled Collection")
         modelContext.insert(newCollection)
+        isCollectionsCollapsed = false
         appState.selectedSidebarItem = .collection(newCollection.id)
-        beginEditing(newCollection)
         try? modelContext.save()
     }
 
+    private func toggleCollectionsCollapsed() {
+        isCollectionsCollapsed.toggle()
+    }
+
     private func beginEditing(_ collection: ScriptCollection) {
+        isCollectionsCollapsed = false
         editingCollectionID = collection.id
         draftCollectionName = collection.name
 
@@ -442,6 +506,29 @@ struct LibraryView: View {
         editingCollectionID = nil
         focusedCollectionID = nil
         draftCollectionName = ""
+        try? modelContext.save()
+    }
+
+    private func cancelCollectionRename() {
+        editingCollectionID = nil
+        focusedCollectionID = nil
+        draftCollectionName = ""
+    }
+
+    private func delete(collection: ScriptCollection) {
+        let deletedID = collection.id
+
+        if editingCollectionID == deletedID {
+            editingCollectionID = nil
+            focusedCollectionID = nil
+            draftCollectionName = ""
+        }
+
+        if case .collection(deletedID) = appState.selectedSidebarItem {
+            appState.selectedSidebarItem = .allScripts
+        }
+
+        modelContext.delete(collection)
         try? modelContext.save()
     }
 
@@ -535,6 +622,77 @@ struct LibraryView: View {
 
         DispatchQueue.main.async {
             NSApp.sendAction(#selector(NSResponder.showWritingTools(_:)), to: nil, from: nil)
+        }
+    }
+}
+
+private struct CollectionSidebarRow: View {
+    let title: String
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onRename: () -> Void
+    let onDelete: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 16)
+
+            Menu {
+                Button("Rename", action: onRename)
+                Button("Delete", role: .destructive, action: onDelete)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .opacity(isHovered || isSelected ? 1 : 0)
+            .help("Collection Actions")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, 10)
+        .padding(.trailing, 4)
+        .padding(.vertical, 6)
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(selectedBackgroundColor)
+            } else if isHovered {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(hoverBackgroundColor)
+            }
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .onTapGesture(perform: onSelect)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .animation(.easeOut(duration: 0.12), value: isHovered)
+    }
+
+    private var hoverBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.08)
+        default:
+            return Color.black.opacity(0.06)
+        }
+    }
+
+    private var selectedBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.1)
+        default:
+            return Color.black.opacity(0.08)
         }
     }
 }
