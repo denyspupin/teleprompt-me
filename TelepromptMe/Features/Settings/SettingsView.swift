@@ -56,6 +56,8 @@ struct SettingsView: View {
                 switch selectedSection {
                 case .general:
                     generalContent
+                case .aiModels:
+                    aiModelsContent
                 case .appearance:
                     appearanceContent
                 case .shortcuts:
@@ -152,6 +154,88 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var aiModelsContent: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            settingsSection(title: "Speech Recognition") {
+                settingsCard {
+                    pickerRow(
+                        title: "Recognition engine",
+                        subtitle: "Choose the local model used to follow your spoken script.",
+                        selection: speechEngineSelectionBinding
+                    ) {
+                        ForEach(readySpeechEngines) { engine in
+                            Text(engine.title).tag(engine.rawValue)
+                        }
+                    }
+
+                    pickerRow(
+                        title: "Language",
+                        subtitle: "Pick the language the built-in recognizer should listen for.",
+                        selection: binding(for: \.selectedSpeechLocaleIdentifier)
+                    ) {
+                        ForEach(speechLocaleOptions, id: \.identifier) { locale in
+                            Text(locale.localizedString(forIdentifier: locale.identifier) ?? locale.identifier)
+                                .tag(locale.identifier)
+                        }
+                    }
+
+                    toggleRow(
+                        title: "Start voice follow with overlay",
+                        subtitle: "Begin listening automatically whenever the teleprompter overlay opens.",
+                        isOn: binding(for: \.isVoiceFollowEnabledByDefault)
+                    )
+
+                    sliderRow(
+                        title: "Matching sensitivity",
+                        subtitle: "Higher values require closer matches before the script advances.",
+                        valueText: currentSettings.speechFollowSensitivity.formatted(.number.precision(.fractionLength(2))),
+                        value: binding(for: \.speechFollowSensitivity),
+                        range: 0.45...0.9,
+                        step: 0.01,
+                        showsDivider: false
+                    )
+                }
+            }
+
+            settingsSection(title: "Available Models") {
+                settingsCard {
+                    ForEach(Array(SpeechRecognitionEngineID.allCases.enumerated()), id: \.element) { index, model in
+                        modelRow(
+                            model: model,
+                            showsDivider: index < SpeechRecognitionEngineID.allCases.count - 1
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private var readySpeechEngines: [SpeechRecognitionEngineID] {
+        SpeechRecognitionEngineID.allCases.filter { model in
+            appState.speechModelDownloadManager.state(for: model) == .downloaded
+        }
+    }
+
+    private var speechLocaleOptions: [Locale] {
+        let defaults = [
+            Locale(identifier: "en_US"),
+            Locale(identifier: "en_GB"),
+            Locale(identifier: "de_DE"),
+            Locale(identifier: "es_ES"),
+            Locale(identifier: "fr_FR"),
+        ]
+
+        guard !defaults.map(\.identifier).contains(currentSettings.selectedSpeechLocaleIdentifier) else {
+            return defaults
+        }
+
+        return [Locale(identifier: currentSettings.selectedSpeechLocaleIdentifier)] + defaults
+    }
+
+    private var supportedSpeechLocaleIdentifiers: Set<String> {
+        Set(speechLocaleOptions.map(\.identifier))
     }
 
     private var shortcutsContent: some View {
@@ -407,10 +491,102 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
+    private func modelRow(
+        model: SpeechRecognitionEngineID,
+        showsDivider: Bool = true
+    ) -> some View {
+        let state = appState.speechModelDownloadManager.state(for: model)
+
+        rowContainer(alignment: .top, showsDivider: showsDivider) {
+            VStack(alignment: .leading, spacing: 8) {
+                settingsTextColumn(title: model.title, subtitle: modelSubtitle(for: model))
+
+                if case .failed(let message) = state {
+                    Text(message)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 24)
+
+            modelControl(for: model, state: state)
+                .frame(width: settingsControlColumnWidth, alignment: .trailing)
+        }
+    }
+
+    @ViewBuilder
+    private func modelControl(
+        for model: SpeechRecognitionEngineID,
+        state: SpeechModelDownloadManager.DownloadState
+    ) -> some View {
+        switch state {
+        case .downloaded:
+            HStack(spacing: 10) {
+                Text(model.isBuiltIn ? "Built in" : "Downloaded")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.green)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.12), in: Capsule(style: .continuous))
+
+                if currentSettings.resolvedSpeechEngineID == model {
+                    Text("In use")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button("Use") {
+                        selectSpeechEngine(model)
+                    }
+                    .controlSize(.regular)
+                }
+
+                if !model.isBuiltIn {
+                    Button {
+                        deleteSpeechModel(model)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                    .help("Delete model")
+                }
+            }
+        case .downloading(let progress):
+            VStack(alignment: .trailing, spacing: 8) {
+                ProgressView(value: progress)
+                    .frame(width: settingsControlColumnWidth)
+
+                Button("Cancel") {
+                    appState.speechModelDownloadManager.cancelDownload(for: model)
+                }
+                .controlSize(.small)
+            }
+        case .notDownloaded, .failed:
+            Button("Download") {
+                appState.speechModelDownloadManager.download(model)
+            }
+            .controlSize(.regular)
+            .disabled(model.isBuiltIn)
+        }
+    }
+
+    private func modelSubtitle(for model: SpeechRecognitionEngineID) -> String {
+        if let estimatedDownloadSize = model.estimatedDownloadSize {
+            return "\(model.subtitle) Estimated download: \(estimatedDownloadSize)."
+        }
+
+        return model.subtitle
+    }
+
     private var sectionDescription: String {
         switch selectedSection {
         case .general:
             return "Core app behavior and overlay defaults."
+        case .aiModels:
+            return "Manage local transcription models and voice-follow behavior."
         case .appearance:
             return "Adjust how your teleprompter looks on screen."
         case .shortcuts:
@@ -530,6 +706,21 @@ struct SettingsView: View {
         )
     }
 
+    private var speechEngineSelectionBinding: Binding<String> {
+        Binding(
+            get: {
+                currentSettings.resolvedSpeechEngineID.rawValue
+            },
+            set: { newValue in
+                guard appState.speechModelDownloadManager.isReady(newValue) else { return }
+                let settingsModel = currentSettingsModel()
+                settingsModel.selectedSpeechEngineID = newValue
+                try? modelContext.save()
+                appState.applySettings(settingsModel)
+            }
+        )
+    }
+
     private func nearestFontSizeOption(to value: Double) -> Int {
         fontSizeOptions.min { first, second in
             abs(Double(first) - value) < abs(Double(second) - value)
@@ -545,6 +736,22 @@ struct SettingsView: View {
         modelContext.insert(defaults)
         try? modelContext.save()
         return defaults
+    }
+
+    private func selectSpeechEngine(_ model: SpeechRecognitionEngineID) {
+        guard appState.speechModelDownloadManager.state(for: model) == .downloaded else { return }
+        let settingsModel = currentSettingsModel()
+        settingsModel.selectedSpeechEngineID = model.rawValue
+        try? modelContext.save()
+        appState.applySettings(settingsModel)
+    }
+
+    private func deleteSpeechModel(_ model: SpeechRecognitionEngineID) {
+        appState.speechModelDownloadManager.delete(model)
+
+        if currentSettings.resolvedSpeechEngineID == model {
+            selectSpeechEngine(.appleBuiltIn)
+        }
     }
 
     private func updateShortcut(_ target: AppShortcutCommand, value: AppShortcut, isAssigned: Bool = true) {
@@ -586,6 +793,14 @@ struct SettingsView: View {
 
     private func syncSettingsIntoAppState() {
         let settingsModel = currentSettingsModel()
+        if !supportedSpeechLocaleIdentifiers.contains(settingsModel.selectedSpeechLocaleIdentifier) {
+            settingsModel.selectedSpeechLocaleIdentifier = "en_US"
+            try? modelContext.save()
+        }
+        if !appState.speechModelDownloadManager.isReady(settingsModel.selectedSpeechEngineID) {
+            settingsModel.selectedSpeechEngineID = SpeechRecognitionEngineID.appleBuiltIn.rawValue
+            try? modelContext.save()
+        }
         appState.applySettings(settingsModel)
     }
 }

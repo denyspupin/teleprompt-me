@@ -2,6 +2,7 @@ import SwiftUI
 
 enum SettingsSection: String, CaseIterable, Identifiable {
     case general
+    case aiModels
     case appearance
     case shortcuts
 
@@ -11,6 +12,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         switch self {
         case .general:
             return "General"
+        case .aiModels:
+            return "AI Models"
         case .appearance:
             return "Appearance"
         case .shortcuts:
@@ -22,6 +25,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         switch self {
         case .general:
             return "gearshape"
+        case .aiModels:
+            return "waveform.and.magnifyingglass"
         case .appearance:
             return "textformat"
         case .shortcuts:

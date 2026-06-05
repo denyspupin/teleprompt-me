@@ -360,6 +360,10 @@ struct AppSettingsSnapshot: Equatable {
     var showDockIcon: Bool
     var showMenuBarItem: Bool
     var keepOverlayCentered: Bool
+    var isVoiceFollowEnabledByDefault: Bool
+    var selectedSpeechEngineID: String
+    var selectedSpeechLocaleIdentifier: String
+    var speechFollowSensitivity: Double
     var toggleOverlayShortcut: AppShortcut
     var togglePlaybackShortcut: AppShortcut
     var holdToScrollShortcut: AppShortcut
@@ -379,6 +383,10 @@ struct AppSettingsSnapshot: Equatable {
         showDockIcon = settings.showDockIcon
         showMenuBarItem = settings.showMenuBarItem
         keepOverlayCentered = settings.keepOverlayCentered
+        isVoiceFollowEnabledByDefault = settings.isVoiceFollowEnabledByDefault
+        selectedSpeechEngineID = settings.resolvedSpeechEngineID.rawValue
+        selectedSpeechLocaleIdentifier = settings.selectedSpeechLocaleIdentifier
+        speechFollowSensitivity = settings.speechFollowSensitivity
         toggleOverlayShortcut = settings.toggleOverlayShortcut
         togglePlaybackShortcut = settings.togglePlaybackShortcut
         holdToScrollShortcut = settings.holdToScrollShortcut
@@ -412,6 +420,10 @@ final class AppSettings {
     var showDockIcon: Bool
     var showMenuBarItem: Bool
     var keepOverlayCentered: Bool
+    var isVoiceFollowEnabledByDefault: Bool
+    var selectedSpeechEngineID: String
+    var selectedSpeechLocaleIdentifier: String
+    var speechFollowSensitivity: Double
     var toggleOverlayShortcutKey: String
     var toggleOverlayShortcutModifiersRawValue: Int
     var togglePlaybackShortcutKey: String
@@ -441,6 +453,10 @@ final class AppSettings {
         showDockIcon: Bool = true,
         showMenuBarItem: Bool = true,
         keepOverlayCentered: Bool = true,
+        isVoiceFollowEnabledByDefault: Bool = false,
+        selectedSpeechEngineID: String = SpeechRecognitionEngineID.appleBuiltIn.rawValue,
+        selectedSpeechLocaleIdentifier: String = "en_US",
+        speechFollowSensitivity: Double = 0.62,
         toggleOverlayShortcutKey: String = AppShortcut.Key.o.rawValue,
         toggleOverlayShortcutModifiersRawValue: Int = AppShortcut.Modifiers.command.union(.shift).rawValue,
         togglePlaybackShortcutKey: String = AppShortcut.Key.p.rawValue,
@@ -469,6 +485,10 @@ final class AppSettings {
         self.showDockIcon = showDockIcon
         self.showMenuBarItem = showMenuBarItem
         self.keepOverlayCentered = keepOverlayCentered
+        self.isVoiceFollowEnabledByDefault = isVoiceFollowEnabledByDefault
+        self.selectedSpeechEngineID = selectedSpeechEngineID
+        self.selectedSpeechLocaleIdentifier = selectedSpeechLocaleIdentifier
+        self.speechFollowSensitivity = speechFollowSensitivity
         self.toggleOverlayShortcutKey = toggleOverlayShortcutKey
         self.toggleOverlayShortcutModifiersRawValue = toggleOverlayShortcutModifiersRawValue
         self.togglePlaybackShortcutKey = togglePlaybackShortcutKey
@@ -487,6 +507,10 @@ final class AppSettings {
         self.stepForwardShortcutModifiersRawValue = stepForwardShortcutModifiersRawValue
         self.stepBackwardShortcutKey = stepBackwardShortcutKey
         self.stepBackwardShortcutModifiersRawValue = stepBackwardShortcutModifiersRawValue
+    }
+
+    var resolvedSpeechEngineID: SpeechRecognitionEngineID {
+        SpeechRecognitionEngineID(rawValue: selectedSpeechEngineID) ?? .appleBuiltIn
     }
 
     var toggleOverlayShortcut: AppShortcut {

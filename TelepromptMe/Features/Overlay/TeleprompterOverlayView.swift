@@ -30,6 +30,10 @@ struct TeleprompterOverlayView: View {
                     Text(speedLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Text(speechStatusLabel)
+                        .font(.caption)
+                        .foregroundStyle(speechStatusColor)
                 }
                 Spacer()
                 controlBar
@@ -82,6 +86,13 @@ struct TeleprompterOverlayView: View {
                 appState.restartPlayback()
             }
 
+            controlButton(
+                systemImage: appState.speechFollowController.isListening ? "waveform.circle.fill" : "waveform.circle",
+                label: appState.speechFollowController.isListening ? "Stop Voice Follow" : "Follow Voice"
+            ) {
+                appState.toggleVoiceFollow()
+            }
+
             controlButton(systemImage: "eye.slash.fill", label: "Hide") {
                 appState.hideOverlay()
             }
@@ -102,6 +113,32 @@ struct TeleprompterOverlayView: View {
 
     private var speedLabel: String {
         "\(Int(appState.playbackController.speedWordsPerMinute)) WPM"
+    }
+
+    private var speechStatusLabel: String {
+        switch appState.speechFollowController.state {
+        case .idle:
+            return ""
+        case .listening:
+            return "Listening"
+        case .matching:
+            return "Following"
+        case .lost:
+            return "Finding place"
+        case .failed(let message):
+            return message
+        }
+    }
+
+    private var speechStatusColor: Color {
+        switch appState.speechFollowController.state {
+        case .failed:
+            return .red
+        case .lost:
+            return .orange
+        default:
+            return .secondary
+        }
     }
 
     private var textContent: some View {
