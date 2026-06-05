@@ -123,14 +123,7 @@ final class SpeechModelDownloadManager {
     }
 
     static func directoryURL(for model: SpeechRecognitionEngineID) -> URL {
-        applicationSupportURL
-            .appendingPathComponent("SpeechModels", isDirectory: true)
-            .appendingPathComponent(model.rawValue, isDirectory: true)
-    }
-
-    private static var applicationSupportURL: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("TelepromptMe", isDirectory: true)
+        SpeechModelStorage.directoryURL(for: model)
     }
 
     private func manifestURL(for model: SpeechRecognitionEngineID) -> URL {

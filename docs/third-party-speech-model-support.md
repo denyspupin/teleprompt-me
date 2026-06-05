@@ -81,20 +81,16 @@ The first local runtime should be `whisperCpp`.
    - Rewrites the runtime rpath to load dylibs from the bundled folder.
    - Keeps `Vendor/whisper.cpp/` out of git.
 
-### Next
+4. Prove file-level transcription end to end.
+   - Installed `ggml-tiny.en.bin` locally for the first smoke test.
+   - Used `Vendor/whisper.cpp/samples/jfk.wav` as the tiny WAV fixture.
+   - Ran `whisper-cli` against the local model and WAV file.
+   - Confirmed the pinned CLI writes `--output-txt` to an `audio.wav.txt`
+     sidecar file.
+   - Adjusted `WhisperCppTranscriber` to remove stale sidecars before launch and
+     prefer sidecar transcript output, with stdout retained as a fallback.
 
-1. Prove file-level transcription end to end.
-   - Download or install a small known Whisper model, preferably
-     `ggml-base.en.bin` for the first smoke test.
-   - Add or identify a tiny WAV fixture.
-   - Run `WhisperCppTranscriber` against the bundled `whisper-cli`, local model,
-     and WAV file.
-   - Confirm whether `--output-txt` writes to stdout or a sidecar file for the
-     current pinned CLI.
-   - Adjust `WhisperCppTranscriber` output parsing so it reliably returns the
-     final transcript.
-
-2. Add `WhisperSpeechRecognitionEngine`.
+5. Add `WhisperSpeechRecognitionEngine`.
    - Conform to `SpeechRecognitionEngine`.
    - Request microphone permission.
    - Capture audio with `AVAudioEngine`.
@@ -103,19 +99,21 @@ The first local runtime should be `whisperCpp`.
    - Emit a final `SpeechRecognitionResult`.
    - Keep partial/streaming transcription for a later iteration.
 
-3. Add a speech engine factory.
+6. Add a speech engine factory.
    - Keep `SpeechFollowController` independent from concrete runtimes.
    - Route Apple models to `AppleSpeechRecognitionEngine`.
    - Route Whisper models to `WhisperSpeechRecognitionEngine`.
    - Keep Apple Speech as fallback if the Whisper runtime or model is missing.
 
-4. Add `SpeechModelCatalog`.
+### Next
+
+1. Add `SpeechModelCatalog`.
    - Built-in Apple Speech descriptor.
    - Downloadable Whisper descriptors.
    - Custom/imported descriptors.
    - Selected-model fallback when a selected model disappears.
 
-5. Upgrade download lifecycle.
+2. Upgrade download lifecycle.
    - Byte-level progress.
    - Cancellation.
    - `.partial` files.
@@ -123,19 +121,19 @@ The first local runtime should be `whisperCpp`.
    - Cleanup of interrupted downloads.
    - Delete/unload behavior for active models.
 
-6. Add custom model import.
+3. Add custom model import.
    - Start with user-selected Whisper model files (`.bin`, later `.gguf` if the
      chosen whisper.cpp build supports it).
    - Generate local metadata.
    - Validate file existence and basic compatibility before selection.
 
-7. Update Settings UI.
+4. Update Settings UI.
    - Show installed/downloading/incompatible states.
    - Show model size, language support, custom/recommended badges.
    - Provide download/cancel/delete/select/import actions.
    - Filter or reset language selection based on selected model support.
 
-8. Add focused tests.
+5. Add focused tests.
    - Catalog decoding/discovery.
    - Download state transitions.
    - SHA256 mismatch handling.

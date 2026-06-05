@@ -86,6 +86,9 @@ final class WhisperCppTranscriber {
         process.executableURL = executableURL
         process.arguments = arguments(audioURL: audioURL, options: options)
 
+        let textOutputURL = Self.textOutputURL(for: audioURL)
+        try? FileManager.default.removeItem(at: textOutputURL)
+
         let outputPipe = Pipe()
         let errorPipe = Pipe()
         process.standardOutput = outputPipe
@@ -100,6 +103,7 @@ final class WhisperCppTranscriber {
         return try await withTaskCancellationHandler {
             try await waitForTranscription(
                 process: process,
+                textOutputURL: textOutputURL,
                 outputPipe: outputPipe,
                 errorPipe: errorPipe
             )
@@ -150,6 +154,7 @@ final class WhisperCppTranscriber {
 
     private func waitForTranscription(
         process: Process,
+        textOutputURL: URL,
         outputPipe: Pipe,
         errorPipe: Pipe
     ) async throws -> WhisperCppTranscriptionResult {
@@ -164,7 +169,10 @@ final class WhisperCppTranscriber {
                     return
                 }
 
-                let transcript = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+                let transcript = Self.transcript(
+                    textOutputURL: textOutputURL,
+                    stdout: stdout
+                )
                 guard !transcript.isEmpty else {
                     continuation.resume(throwing: WhisperCppTranscriberError.emptyTranscript)
                     return
@@ -178,6 +186,20 @@ final class WhisperCppTranscriber {
     private static func readString(from pipe: Pipe) -> String {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    private static func textOutputURL(for audioURL: URL) -> URL {
+        URL(fileURLWithPath: audioURL.path + ".txt")
+    }
+
+    private static func transcript(textOutputURL: URL, stdout: String) -> String {
+        if let sidecarTranscript = try? String(contentsOf: textOutputURL, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !sidecarTranscript.isEmpty {
+            return sidecarTranscript
+        }
+
+        return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func whisperLanguageCode(from localeIdentifier: String) -> String {

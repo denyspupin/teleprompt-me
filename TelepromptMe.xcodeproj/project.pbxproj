@@ -35,6 +35,9 @@
 		A00000000000000000000090 /* SpeechFollowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* SpeechFollowController.swift */; };
 		A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000099 /* SpeechModelDownloadManager.swift */; };
 		A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000009D /* WhisperCppTranscriber.swift */; };
+		A0000000000000000000009F /* WhisperSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */; };
+		A000000000000000000000A1 /* SpeechRecognitionEngineFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */; };
+		A000000000000000000000A3 /* SpeechModelStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A4 /* SpeechModelStorage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +70,9 @@
 		A00000000000000000000095 /* SpeechFollowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechFollowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000099 /* SpeechModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelDownloadManager.swift; sourceTree = "<group>"; };
 		A0000000000000000000009D /* WhisperCppTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCppTranscriber.swift; sourceTree = "<group>"; };
+		A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngineFactory.swift; sourceTree = "<group>"; };
+		A000000000000000000000A4 /* SpeechModelStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelStorage.swift; sourceTree = "<group>"; };
 		A00000000000000000000097 /* TelepromptMe.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TelepromptMe.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -241,6 +247,9 @@
 				A00000000000000000000095 /* SpeechFollowController.swift */,
 				A00000000000000000000099 /* SpeechModelDownloadManager.swift */,
 				A0000000000000000000009D /* WhisperCppTranscriber.swift */,
+				A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */,
+				A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */,
+				A000000000000000000000A4 /* SpeechModelStorage.swift */,
 			);
 			path = Speech;
 			sourceTree = "<group>";
@@ -400,6 +409,9 @@
 				A00000000000000000000090 /* SpeechFollowController.swift in Sources */,
 				A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */,
 				A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */,
+				A0000000000000000000009F /* WhisperSpeechRecognitionEngine.swift in Sources */,
+				A000000000000000000000A1 /* SpeechRecognitionEngineFactory.swift in Sources */,
+				A000000000000000000000A3 /* SpeechModelStorage.swift in Sources */,
 				A0000000000000000000000A /* ShortcutManager.swift in Sources */,
 				A0000000000000000000000B /* LibraryView.swift in Sources */,
 				A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */,
