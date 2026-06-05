@@ -34,6 +34,7 @@
 		A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000094 /* ScriptProgressMatcher.swift */; };
 		A00000000000000000000090 /* SpeechFollowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* SpeechFollowController.swift */; };
 		A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000099 /* SpeechModelDownloadManager.swift */; };
+		A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000009D /* WhisperCppTranscriber.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		A00000000000000000000094 /* ScriptProgressMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptProgressMatcher.swift; sourceTree = "<group>"; };
 		A00000000000000000000095 /* SpeechFollowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechFollowController.swift; sourceTree = "<group>"; };
 		A00000000000000000000099 /* SpeechModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelDownloadManager.swift; sourceTree = "<group>"; };
+		A0000000000000000000009D /* WhisperCppTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCppTranscriber.swift; sourceTree = "<group>"; };
 		A00000000000000000000097 /* TelepromptMe.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TelepromptMe.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -238,6 +240,7 @@
 				A00000000000000000000094 /* ScriptProgressMatcher.swift */,
 				A00000000000000000000095 /* SpeechFollowController.swift */,
 				A00000000000000000000099 /* SpeechModelDownloadManager.swift */,
+				A0000000000000000000009D /* WhisperCppTranscriber.swift */,
 			);
 			path = Speech;
 			sourceTree = "<group>";
@@ -326,6 +329,7 @@
 				A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */,
 				A00000000000000000000090 /* SpeechFollowController.swift in Sources */,
 				A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */,
+				A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */,
 				A0000000000000000000000A /* ShortcutManager.swift in Sources */,
 				A0000000000000000000000B /* LibraryView.swift in Sources */,
 				A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */,
@@ -517,6 +521,7 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
 	};
 	rootObject = A00000000000000000000041 /* Project object */;
 }

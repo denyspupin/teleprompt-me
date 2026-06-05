@@ -32,7 +32,33 @@ final class SpeechModelDownloadManager {
             return false
         }
 
-        return state(for: model) == .downloaded
+        return isUsable(model)
+    }
+
+    func isUsable(_ modelID: String) -> Bool {
+        guard let model = SpeechRecognitionEngineID(rawValue: modelID) else {
+            return false
+        }
+
+        return isUsable(model)
+    }
+
+    func isUsable(_ model: SpeechRecognitionEngineID) -> Bool {
+        guard state(for: model) == .downloaded else {
+            return false
+        }
+
+        guard !model.isBuiltIn else {
+            return true
+        }
+
+        guard model.isWhisperModel, let modelFileName = model.primaryModelFileName else {
+            return false
+        }
+
+        return FileManager.default.fileExists(
+            atPath: directoryURL(for: model).appendingPathComponent(modelFileName).path
+        )
     }
 
     func download(_ model: SpeechRecognitionEngineID) {
@@ -93,12 +119,16 @@ final class SpeechModelDownloadManager {
     }
 
     func directoryURL(for model: SpeechRecognitionEngineID) -> URL {
+        Self.directoryURL(for: model)
+    }
+
+    static func directoryURL(for model: SpeechRecognitionEngineID) -> URL {
         applicationSupportURL
             .appendingPathComponent("SpeechModels", isDirectory: true)
             .appendingPathComponent(model.rawValue, isDirectory: true)
     }
 
-    private var applicationSupportURL: URL {
+    private static var applicationSupportURL: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("TelepromptMe", isDirectory: true)
     }
@@ -119,13 +149,19 @@ final class SpeechModelDownloadManager {
     }
 
     private func markInstalled(_ model: SpeechRecognitionEngineID) async throws {
-        let metadata = """
-        model=\(model.rawValue)
-        repository=\(model.repositoryID ?? "built-in")
-        installedAt=\(Date().ISO8601Format())
-        """
+        let metadata = SpeechModelInstallManifest(
+            id: model.rawValue,
+            runtime: model.isWhisperModel ? "whisper.cpp" : "apple-speech",
+            repository: model.repositoryID,
+            primaryModelFileName: model.primaryModelFileName,
+            installedAt: Date()
+        )
 
-        try metadata.write(to: manifestURL(for: model), atomically: true, encoding: .utf8)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(metadata)
+        try data.write(to: manifestURL(for: model), options: .atomic)
     }
 
     private func downloadRepository(for model: SpeechRecognitionEngineID) async throws {
@@ -211,6 +247,14 @@ private struct HuggingFaceSibling: Decodable {
 
 private struct RepositoryFile: Equatable {
     var path: String
+}
+
+private struct SpeechModelInstallManifest: Encodable {
+    var id: String
+    var runtime: String
+    var repository: String?
+    var primaryModelFileName: String?
+    var installedAt: Date
 }
 
 private enum SpeechModelDownloadError: LocalizedError {

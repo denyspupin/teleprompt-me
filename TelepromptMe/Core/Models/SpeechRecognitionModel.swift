@@ -2,7 +2,7 @@ import Foundation
 
 enum SpeechRecognitionEngineID: String, CaseIterable, Identifiable {
     case appleBuiltIn = "apple-built-in"
-    case parakeetV3 = "parakeet-v3"
+    case whisperSmall = "whisper-small"
 
     var id: String { rawValue }
 
@@ -10,8 +10,8 @@ enum SpeechRecognitionEngineID: String, CaseIterable, Identifiable {
         switch self {
         case .appleBuiltIn:
             return "Apple Built-In"
-        case .parakeetV3:
-            return "Parakeet v3"
+        case .whisperSmall:
+            return "Whisper Small"
         }
     }
 
@@ -19,8 +19,8 @@ enum SpeechRecognitionEngineID: String, CaseIterable, Identifiable {
         switch self {
         case .appleBuiltIn:
             return "Uses the local speech recognition model included with macOS."
-        case .parakeetV3:
-            return "A downloadable local model for offline speech recognition."
+        case .whisperSmall:
+            return "A downloadable whisper.cpp model for offline recognition."
         }
     }
 
@@ -28,12 +28,21 @@ enum SpeechRecognitionEngineID: String, CaseIterable, Identifiable {
         self == .appleBuiltIn
     }
 
+    var isWhisperModel: Bool {
+        switch self {
+        case .appleBuiltIn:
+            return false
+        case .whisperSmall:
+            return true
+        }
+    }
+
     var estimatedDownloadSize: String? {
         switch self {
         case .appleBuiltIn:
             return nil
-        case .parakeetV3:
-            return "755 MB"
+        case .whisperSmall:
+            return "465 MB"
         }
     }
 
@@ -41,12 +50,21 @@ enum SpeechRecognitionEngineID: String, CaseIterable, Identifiable {
         switch self {
         case .appleBuiltIn:
             return nil
-        case .parakeetV3:
-            return "sonic-speech/parakeet-tdt-0.6b-v3-int8"
+        case .whisperSmall:
+            return "TelepromptMe/whisper-small-ggml"
         }
     }
 
     var manifestFileName: String {
-        "\(rawValue).model"
+        "model.json"
+    }
+
+    var primaryModelFileName: String? {
+        switch self {
+        case .appleBuiltIn:
+            return nil
+        case .whisperSmall:
+            return "ggml-small.bin"
+        }
     }
 }

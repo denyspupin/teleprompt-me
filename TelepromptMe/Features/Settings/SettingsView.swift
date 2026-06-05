@@ -214,7 +214,7 @@ struct SettingsView: View {
 
     private var readySpeechEngines: [SpeechRecognitionEngineID] {
         SpeechRecognitionEngineID.allCases.filter { model in
-            appState.speechModelDownloadManager.state(for: model) == .downloaded
+            appState.speechModelDownloadManager.isUsable(model)
         }
     }
 
@@ -525,14 +525,18 @@ struct SettingsView: View {
         switch state {
         case .downloaded:
             HStack(spacing: 10) {
-                Text(model.isBuiltIn ? "Built in" : "Downloaded")
+                Text(modelStatusText(for: model))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(appState.speechModelDownloadManager.isUsable(model) ? .green : .orange)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.green.opacity(0.12), in: Capsule(style: .continuous))
+                    .background(
+                        (appState.speechModelDownloadManager.isUsable(model) ? Color.green : Color.orange)
+                            .opacity(0.12),
+                        in: Capsule(style: .continuous)
+                    )
 
-                if currentSettings.resolvedSpeechEngineID == model {
+                if currentSettings.resolvedSpeechEngineID == model && appState.speechModelDownloadManager.isUsable(model) {
                     Text("In use")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
@@ -541,6 +545,7 @@ struct SettingsView: View {
                         selectSpeechEngine(model)
                     }
                     .controlSize(.regular)
+                    .disabled(!appState.speechModelDownloadManager.isUsable(model))
                 }
 
                 if !model.isBuiltIn {
@@ -574,11 +579,25 @@ struct SettingsView: View {
     }
 
     private func modelSubtitle(for model: SpeechRecognitionEngineID) -> String {
+        if !model.isBuiltIn,
+           appState.speechModelDownloadManager.state(for: model) == .downloaded,
+           !appState.speechModelDownloadManager.isUsable(model) {
+            return "\(model.subtitle) Downloaded files must include the expected whisper.cpp model file."
+        }
+
         if let estimatedDownloadSize = model.estimatedDownloadSize {
             return "\(model.subtitle) Estimated download: \(estimatedDownloadSize)."
         }
 
         return model.subtitle
+    }
+
+    private func modelStatusText(for model: SpeechRecognitionEngineID) -> String {
+        if model.isBuiltIn {
+            return "Built in"
+        }
+
+        return appState.speechModelDownloadManager.isUsable(model) ? "Downloaded" : "Incompatible"
     }
 
     private var sectionDescription: String {
@@ -712,7 +731,7 @@ struct SettingsView: View {
                 currentSettings.resolvedSpeechEngineID.rawValue
             },
             set: { newValue in
-                guard appState.speechModelDownloadManager.isReady(newValue) else { return }
+                guard appState.speechModelDownloadManager.isUsable(newValue) else { return }
                 let settingsModel = currentSettingsModel()
                 settingsModel.selectedSpeechEngineID = newValue
                 try? modelContext.save()
@@ -739,7 +758,7 @@ struct SettingsView: View {
     }
 
     private func selectSpeechEngine(_ model: SpeechRecognitionEngineID) {
-        guard appState.speechModelDownloadManager.state(for: model) == .downloaded else { return }
+        guard appState.speechModelDownloadManager.isUsable(model) else { return }
         let settingsModel = currentSettingsModel()
         settingsModel.selectedSpeechEngineID = model.rawValue
         try? modelContext.save()

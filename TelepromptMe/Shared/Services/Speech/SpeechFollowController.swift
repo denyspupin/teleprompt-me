@@ -79,7 +79,7 @@ final class SpeechFollowController {
 
     private func recognitionEngine(for engineID: String) -> SpeechRecognitionEngine {
         switch SpeechRecognitionEngineID(rawValue: engineID) {
-        case .appleBuiltIn, .parakeetV3, .none:
+        case .appleBuiltIn, .whisperSmall, .none:
             return AppleSpeechRecognitionEngine()
         }
     }
