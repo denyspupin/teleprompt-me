@@ -55,13 +55,67 @@ The first local runtime should be `whisperCpp`.
 
 ## Implementation Phases
 
-1. Add `SpeechModelCatalog`.
+### Completed
+
+1. Save the Whisper-first implementation plan.
+   - Documented the decision to avoid a Core ML-first model path.
+   - Kept Apple Speech as the fallback runtime.
+   - Chose whisper.cpp as the first third-party local runtime.
+
+2. Add the initial whisper.cpp Swift wrapper.
+   - Added `WhisperCppTranscriber`.
+   - Wrapped `whisper-cli` through `Process`.
+   - Added validation for executable, model, and audio file paths.
+   - Added cancellation handling.
+   - Added bundled executable resolution through
+     `WhisperCppTranscriber.bundledExecutableURL`.
+
+3. Bundle the whisper.cpp runtime.
+   - Added `scripts/build-whisper-cpp.sh`.
+   - Pinned whisper.cpp to commit `99613cb720b65036237d44b52f753b51f75c2797`.
+   - Builds `whisper-cli` with Metal support.
+   - Added `scripts/copy-whisper-runtime.sh`.
+   - Added the Xcode `Copy Whisper Runtime` build phase.
+   - Copies `whisper-cli` and required `libwhisper`/`libggml` dylibs into
+     `Contents/Resources/whisper`.
+   - Rewrites the runtime rpath to load dylibs from the bundled folder.
+   - Keeps `Vendor/whisper.cpp/` out of git.
+
+### Next
+
+1. Prove file-level transcription end to end.
+   - Download or install a small known Whisper model, preferably
+     `ggml-base.en.bin` for the first smoke test.
+   - Add or identify a tiny WAV fixture.
+   - Run `WhisperCppTranscriber` against the bundled `whisper-cli`, local model,
+     and WAV file.
+   - Confirm whether `--output-txt` writes to stdout or a sidecar file for the
+     current pinned CLI.
+   - Adjust `WhisperCppTranscriber` output parsing so it reliably returns the
+     final transcript.
+
+2. Add `WhisperSpeechRecognitionEngine`.
+   - Conform to `SpeechRecognitionEngine`.
+   - Request microphone permission.
+   - Capture audio with `AVAudioEngine`.
+   - Write session audio to a temporary 16-bit WAV file.
+   - Invoke `WhisperCppTranscriber`.
+   - Emit a final `SpeechRecognitionResult`.
+   - Keep partial/streaming transcription for a later iteration.
+
+3. Add a speech engine factory.
+   - Keep `SpeechFollowController` independent from concrete runtimes.
+   - Route Apple models to `AppleSpeechRecognitionEngine`.
+   - Route Whisper models to `WhisperSpeechRecognitionEngine`.
+   - Keep Apple Speech as fallback if the Whisper runtime or model is missing.
+
+4. Add `SpeechModelCatalog`.
    - Built-in Apple Speech descriptor.
    - Downloadable Whisper descriptors.
    - Custom/imported descriptors.
    - Selected-model fallback when a selected model disappears.
 
-2. Upgrade download lifecycle.
+5. Upgrade download lifecycle.
    - Byte-level progress.
    - Cancellation.
    - `.partial` files.
@@ -69,38 +123,27 @@ The first local runtime should be `whisperCpp`.
    - Cleanup of interrupted downloads.
    - Delete/unload behavior for active models.
 
-3. Add a speech engine factory.
-   - Keep `SpeechFollowController` independent from concrete runtimes.
-   - Route Apple models to `AppleSpeechRecognitionEngine`.
-   - Route Whisper models to the whisper.cpp-backed engine.
-
-4. Add the whisper.cpp wrapper.
-   - Start with a Swift process wrapper around a bundled `whisper-cli` executable.
-   - Build the executable with `scripts/build-whisper-cpp.sh`.
-   - Bundle it into the app with the Xcode `Copy Whisper Runtime` build phase.
-   - Accept a model URL, WAV input URL, language, and translation flag.
-   - Return a final transcript.
-   - Later replace or supplement with direct C/C++ library binding if needed.
-
-5. Add custom model import.
+6. Add custom model import.
    - Start with user-selected Whisper model files (`.bin`, later `.gguf` if the
      chosen whisper.cpp build supports it).
    - Generate local metadata.
    - Validate file existence and basic compatibility before selection.
 
-6. Update Settings UI.
+7. Update Settings UI.
    - Show installed/downloading/incompatible states.
    - Show model size, language support, custom/recommended badges.
    - Provide download/cancel/delete/select/import actions.
    - Filter or reset language selection based on selected model support.
 
-7. Add focused tests.
+8. Add focused tests.
    - Catalog decoding/discovery.
    - Download state transitions.
    - SHA256 mismatch handling.
    - Selection fallback.
    - Engine factory routing.
    - Whisper wrapper command construction.
+   - Bundled runtime resolution.
+   - File-level Whisper transcription using a fixture.
 
 ## Notes From Handy
 
