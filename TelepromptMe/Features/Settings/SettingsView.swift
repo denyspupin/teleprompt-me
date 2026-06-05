@@ -163,9 +163,9 @@ struct SettingsView: View {
                     pickerRow(
                         title: "Recognition engine",
                         subtitle: "Choose the local model used to follow your spoken script.",
-                        selection: binding(for: \.selectedSpeechEngineID)
+                        selection: speechEngineSelectionBinding
                     ) {
-                        ForEach(SpeechRecognitionEngineID.allCases) { engine in
+                        ForEach(readySpeechEngines) { engine in
                             Text(engine.title).tag(engine.rawValue)
                         }
                     }
@@ -201,14 +201,20 @@ struct SettingsView: View {
 
             settingsSection(title: "Available Models") {
                 settingsCard {
-                    modelRow(
-                        title: SpeechRecognitionEngineID.appleBuiltIn.title,
-                        subtitle: SpeechRecognitionEngineID.appleBuiltIn.subtitle,
-                        status: "Built in",
-                        showsDivider: false
-                    )
+                    ForEach(Array(SpeechRecognitionEngineID.allCases.enumerated()), id: \.element) { index, model in
+                        modelRow(
+                            model: model,
+                            showsDivider: index < SpeechRecognitionEngineID.allCases.count - 1
+                        )
+                    }
                 }
             }
+        }
+    }
+
+    private var readySpeechEngines: [SpeechRecognitionEngineID] {
+        SpeechRecognitionEngineID.allCases.filter { model in
+            appState.speechModelDownloadManager.state(for: model) == .downloaded
         }
     }
 
@@ -487,23 +493,92 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func modelRow(
-        title: String,
-        subtitle: String,
-        status: String,
+        model: SpeechRecognitionEngineID,
         showsDivider: Bool = true
     ) -> some View {
-        rowContainer(showsDivider: showsDivider) {
-            settingsTextColumn(title: title, subtitle: subtitle)
+        let state = appState.speechModelDownloadManager.state(for: model)
+
+        rowContainer(alignment: .top, showsDivider: showsDivider) {
+            VStack(alignment: .leading, spacing: 8) {
+                settingsTextColumn(title: model.title, subtitle: modelSubtitle(for: model))
+
+                if case .failed(let message) = state {
+                    Text(message)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
             Spacer(minLength: 24)
 
-            Text(status)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.green)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.green.opacity(0.12), in: Capsule(style: .continuous))
+            modelControl(for: model, state: state)
+                .frame(width: settingsControlColumnWidth, alignment: .trailing)
         }
+    }
+
+    @ViewBuilder
+    private func modelControl(
+        for model: SpeechRecognitionEngineID,
+        state: SpeechModelDownloadManager.DownloadState
+    ) -> some View {
+        switch state {
+        case .downloaded:
+            HStack(spacing: 10) {
+                Text(model.isBuiltIn ? "Built in" : "Downloaded")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.green)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.12), in: Capsule(style: .continuous))
+
+                if currentSettings.resolvedSpeechEngineID == model {
+                    Text("In use")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button("Use") {
+                        selectSpeechEngine(model)
+                    }
+                    .controlSize(.regular)
+                }
+
+                if !model.isBuiltIn {
+                    Button {
+                        deleteSpeechModel(model)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                    .help("Delete model")
+                }
+            }
+        case .downloading(let progress):
+            VStack(alignment: .trailing, spacing: 8) {
+                ProgressView(value: progress)
+                    .frame(width: settingsControlColumnWidth)
+
+                Button("Cancel") {
+                    appState.speechModelDownloadManager.cancelDownload(for: model)
+                }
+                .controlSize(.small)
+            }
+        case .notDownloaded, .failed:
+            Button("Download") {
+                appState.speechModelDownloadManager.download(model)
+            }
+            .controlSize(.regular)
+            .disabled(model.isBuiltIn)
+        }
+    }
+
+    private func modelSubtitle(for model: SpeechRecognitionEngineID) -> String {
+        if let estimatedDownloadSize = model.estimatedDownloadSize {
+            return "\(model.subtitle) Estimated download: \(estimatedDownloadSize)."
+        }
+
+        return model.subtitle
     }
 
     private var sectionDescription: String {
@@ -631,6 +706,21 @@ struct SettingsView: View {
         )
     }
 
+    private var speechEngineSelectionBinding: Binding<String> {
+        Binding(
+            get: {
+                currentSettings.resolvedSpeechEngineID.rawValue
+            },
+            set: { newValue in
+                guard appState.speechModelDownloadManager.isReady(newValue) else { return }
+                let settingsModel = currentSettingsModel()
+                settingsModel.selectedSpeechEngineID = newValue
+                try? modelContext.save()
+                appState.applySettings(settingsModel)
+            }
+        )
+    }
+
     private func nearestFontSizeOption(to value: Double) -> Int {
         fontSizeOptions.min { first, second in
             abs(Double(first) - value) < abs(Double(second) - value)
@@ -646,6 +736,22 @@ struct SettingsView: View {
         modelContext.insert(defaults)
         try? modelContext.save()
         return defaults
+    }
+
+    private func selectSpeechEngine(_ model: SpeechRecognitionEngineID) {
+        guard appState.speechModelDownloadManager.state(for: model) == .downloaded else { return }
+        let settingsModel = currentSettingsModel()
+        settingsModel.selectedSpeechEngineID = model.rawValue
+        try? modelContext.save()
+        appState.applySettings(settingsModel)
+    }
+
+    private func deleteSpeechModel(_ model: SpeechRecognitionEngineID) {
+        appState.speechModelDownloadManager.delete(model)
+
+        if currentSettings.resolvedSpeechEngineID == model {
+            selectSpeechEngine(.appleBuiltIn)
+        }
     }
 
     private func updateShortcut(_ target: AppShortcutCommand, value: AppShortcut, isAssigned: Bool = true) {
@@ -689,6 +795,10 @@ struct SettingsView: View {
         let settingsModel = currentSettingsModel()
         if !supportedSpeechLocaleIdentifiers.contains(settingsModel.selectedSpeechLocaleIdentifier) {
             settingsModel.selectedSpeechLocaleIdentifier = "en_US"
+            try? modelContext.save()
+        }
+        if !appState.speechModelDownloadManager.isReady(settingsModel.selectedSpeechEngineID) {
+            settingsModel.selectedSpeechEngineID = SpeechRecognitionEngineID.appleBuiltIn.rawValue
             try? modelContext.save()
         }
         appState.applySettings(settingsModel)

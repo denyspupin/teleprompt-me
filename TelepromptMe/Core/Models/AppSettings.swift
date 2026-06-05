@@ -384,7 +384,7 @@ struct AppSettingsSnapshot: Equatable {
         showMenuBarItem = settings.showMenuBarItem
         keepOverlayCentered = settings.keepOverlayCentered
         isVoiceFollowEnabledByDefault = settings.isVoiceFollowEnabledByDefault
-        selectedSpeechEngineID = settings.selectedSpeechEngineID
+        selectedSpeechEngineID = settings.resolvedSpeechEngineID.rawValue
         selectedSpeechLocaleIdentifier = settings.selectedSpeechLocaleIdentifier
         speechFollowSensitivity = settings.speechFollowSensitivity
         toggleOverlayShortcut = settings.toggleOverlayShortcut
@@ -507,6 +507,10 @@ final class AppSettings {
         self.stepForwardShortcutModifiersRawValue = stepForwardShortcutModifiersRawValue
         self.stepBackwardShortcutKey = stepBackwardShortcutKey
         self.stepBackwardShortcutModifiersRawValue = stepBackwardShortcutModifiersRawValue
+    }
+
+    var resolvedSpeechEngineID: SpeechRecognitionEngineID {
+        SpeechRecognitionEngineID(rawValue: selectedSpeechEngineID) ?? .appleBuiltIn
     }
 
     var toggleOverlayShortcut: AppShortcut {

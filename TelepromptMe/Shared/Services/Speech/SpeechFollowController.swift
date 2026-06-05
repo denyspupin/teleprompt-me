@@ -40,7 +40,7 @@ final class SpeechFollowController {
         confidence = 0
         unmatchedResults = 0
 
-        let engine = AppleSpeechRecognitionEngine()
+        let engine = recognitionEngine(for: settings.selectedSpeechEngineID)
         self.engine = engine
 
         listenTask = Task { [weak self, weak playbackController] in
@@ -74,6 +74,13 @@ final class SpeechFollowController {
                     self.state = .idle
                 }
             }
+        }
+    }
+
+    private func recognitionEngine(for engineID: String) -> SpeechRecognitionEngine {
+        switch SpeechRecognitionEngineID(rawValue: engineID) {
+        case .appleBuiltIn, .parakeetV3, .none:
+            return AppleSpeechRecognitionEngine()
         }
     }
 

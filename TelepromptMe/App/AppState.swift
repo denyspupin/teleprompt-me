@@ -14,6 +14,7 @@ final class AppState {
     let overlayManager = OverlayWindowManager()
     let playbackController = PlaybackController()
     let speechFollowController = SpeechFollowController()
+    let speechModelDownloadManager = SpeechModelDownloadManager()
     let shortcutManager = ShortcutManager()
     var settingsSnapshot = AppSettingsSnapshot.default
     var isToggleOverlayShortcutAssigned = true
@@ -71,6 +72,7 @@ final class AppState {
         isStepForwardShortcutAssigned = settings.isStepForwardShortcutAssigned
         isStepBackwardShortcutAssigned = settings.isStepBackwardShortcutAssigned
         playbackController.applySpeed(snapshot.playbackSpeedWordsPerMinute)
+        speechModelDownloadManager.refreshInstalledModels()
 
         if shouldReregisterShortcuts {
             registerShortcuts()
