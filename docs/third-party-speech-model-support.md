@@ -76,6 +76,8 @@ The first local runtime should be `whisperCpp`.
 
 4. Add the whisper.cpp wrapper.
    - Start with a Swift process wrapper around a bundled `whisper-cli` executable.
+   - Build the executable with `scripts/build-whisper-cpp.sh`.
+   - Bundle it into the app with the Xcode `Copy Whisper Runtime` build phase.
    - Accept a model URL, WAV input URL, language, and translation flag.
    - Return a final transcript.
    - Later replace or supplement with direct C/C++ library binding if needed.

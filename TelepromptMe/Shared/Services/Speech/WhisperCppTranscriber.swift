@@ -55,6 +55,22 @@ final class WhisperCppTranscriber {
     private let executableURL: URL
     private let modelURL: URL
 
+    static var bundledExecutableURL: URL? {
+        Bundle.main.url(
+            forResource: "whisper-cli",
+            withExtension: nil,
+            subdirectory: "whisper"
+        )
+    }
+
+    convenience init?(bundledModelURL modelURL: URL) {
+        guard let executableURL = Self.bundledExecutableURL else {
+            return nil
+        }
+
+        self.init(executableURL: executableURL, modelURL: modelURL)
+    }
+
     init(executableURL: URL, modelURL: URL) {
         self.executableURL = executableURL
         self.modelURL = modelURL

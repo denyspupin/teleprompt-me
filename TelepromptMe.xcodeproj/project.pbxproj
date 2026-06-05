@@ -255,6 +255,7 @@
 				A00000000000000000000021 /* Sources */,
 				A00000000000000000000020 /* Frameworks */,
 				A00000000000000000000022 /* Resources */,
+				A0000000000000000000009E /* Copy Whisper Runtime */,
 			);
 			buildRules = (
 			);
@@ -309,6 +310,75 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A0000000000000000000009E /* Copy Whisper Runtime */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/copy-whisper-runtime.sh",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/bin/whisper-cli",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/src",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-blas",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-cpu",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-metal",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/src/libwhisper.1.8.6.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/src/libwhisper.1.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/src/libwhisper.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml.0.13.1.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml.0.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml-base.0.13.1.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml-base.0.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml-base.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml-cpu.0.13.1.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml-cpu.0.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/libggml-cpu.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-blas/libggml-blas.0.13.1.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-blas/libggml-blas.0.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-blas/libggml-blas.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-cpu/libggml-cpu.0.13.1.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-cpu/libggml-cpu.0.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-cpu/libggml-cpu.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-metal/libggml-metal.0.13.1.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-metal/libggml-metal.0.dylib",
+				"$(SRCROOT)/Vendor/whisper.cpp/build/ggml/src/ggml-metal/libggml-metal.dylib",
+			);
+			name = "Copy Whisper Runtime";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/whisper-cli",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libwhisper.1.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libwhisper.1.8.6.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libwhisper.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml.0.13.1.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-base.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-base.0.13.1.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-base.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-blas.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-blas.0.13.1.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-blas.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-cpu.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-cpu.0.13.1.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-cpu.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-metal.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-metal.0.13.1.dylib",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper/libggml-metal.dylib",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "scripts/copy-whisper-runtime.sh";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		A00000000000000000000021 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -360,6 +430,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = SWP5BCMH4P;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TelepromptMe/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -393,6 +464,7 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = SWP5BCMH4P;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TelepromptMe/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";

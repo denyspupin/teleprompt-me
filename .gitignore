@@ -11,3 +11,6 @@ DerivedData/
 # Swift Package Manager
 .build/
 Package.resolved
+
+# Vendored local speech runtime build output
+Vendor/whisper.cpp/
