@@ -510,7 +510,8 @@ final class AppSettings {
     }
 
     var resolvedSpeechEngineID: SpeechRecognitionEngineID {
-        SpeechRecognitionEngineID(rawValue: selectedSpeechEngineID) ?? .appleBuiltIn
+        let resolvedModelID = SpeechModelCatalog.resolvedModelID(for: selectedSpeechEngineID)
+        return SpeechRecognitionEngineID(rawValue: resolvedModelID) ?? .appleBuiltIn
     }
 
     var toggleOverlayShortcut: AppShortcut {

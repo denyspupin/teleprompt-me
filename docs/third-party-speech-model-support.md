@@ -105,15 +105,15 @@ The first local runtime should be `whisperCpp`.
    - Route Whisper models to `WhisperSpeechRecognitionEngine`.
    - Keep Apple Speech as fallback if the Whisper runtime or model is missing.
 
-### Next
-
-1. Add `SpeechModelCatalog`.
+7. Add `SpeechModelCatalog`.
    - Built-in Apple Speech descriptor.
    - Downloadable Whisper descriptors.
    - Custom/imported descriptors.
    - Selected-model fallback when a selected model disappears.
 
-2. Upgrade download lifecycle.
+### Next
+
+1. Upgrade download lifecycle.
    - Byte-level progress.
    - Cancellation.
    - `.partial` files.
@@ -121,19 +121,19 @@ The first local runtime should be `whisperCpp`.
    - Cleanup of interrupted downloads.
    - Delete/unload behavior for active models.
 
-3. Add custom model import.
+2. Add custom model import.
    - Start with user-selected Whisper model files (`.bin`, later `.gguf` if the
      chosen whisper.cpp build supports it).
    - Generate local metadata.
    - Validate file existence and basic compatibility before selection.
 
-4. Update Settings UI.
+3. Update Settings UI.
    - Show installed/downloading/incompatible states.
    - Show model size, language support, custom/recommended badges.
    - Provide download/cancel/delete/select/import actions.
    - Filter or reset language selection based on selected model support.
 
-5. Add focused tests.
+4. Add focused tests.
    - Catalog decoding/discovery.
    - Download state transitions.
    - SHA256 mismatch handling.

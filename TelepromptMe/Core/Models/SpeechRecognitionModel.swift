@@ -7,64 +7,38 @@ enum SpeechRecognitionEngineID: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     var title: String {
-        switch self {
-        case .appleBuiltIn:
-            return "Apple Built-In"
-        case .whisperSmall:
-            return "Whisper Small"
-        }
+        descriptor.title
     }
 
     var subtitle: String {
-        switch self {
-        case .appleBuiltIn:
-            return "Uses the local speech recognition model included with macOS."
-        case .whisperSmall:
-            return "A downloadable whisper.cpp model for offline recognition."
-        }
+        descriptor.subtitle
     }
 
     var isBuiltIn: Bool {
-        self == .appleBuiltIn
+        descriptor.isBuiltIn
     }
 
     var isWhisperModel: Bool {
-        switch self {
-        case .appleBuiltIn:
-            return false
-        case .whisperSmall:
-            return true
-        }
+        descriptor.isWhisperModel
     }
 
     var estimatedDownloadSize: String? {
-        switch self {
-        case .appleBuiltIn:
-            return nil
-        case .whisperSmall:
-            return "465 MB"
-        }
+        descriptor.estimatedDownloadSize
     }
 
     var repositoryID: String? {
-        switch self {
-        case .appleBuiltIn:
-            return nil
-        case .whisperSmall:
-            return "TelepromptMe/whisper-small-ggml"
-        }
+        descriptor.repositoryID
     }
 
     var manifestFileName: String {
-        "model.json"
+        SpeechModelStorage.manifestFileName
     }
 
     var primaryModelFileName: String? {
-        switch self {
-        case .appleBuiltIn:
-            return nil
-        case .whisperSmall:
-            return "ggml-small.bin"
-        }
+        descriptor.primaryModelFileName
+    }
+
+    var descriptor: SpeechModelDescriptor {
+        SpeechModelCatalog.descriptor(for: self)
     }
 }

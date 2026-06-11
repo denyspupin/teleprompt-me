@@ -28,11 +28,7 @@ final class SpeechModelDownloadManager {
     }
 
     func isReady(_ modelID: String) -> Bool {
-        guard let model = SpeechRecognitionEngineID(rawValue: modelID) else {
-            return false
-        }
-
-        return isUsable(model)
+        SpeechModelCatalog.resolvedModelID(for: modelID) == modelID
     }
 
     func isUsable(_ modelID: String) -> Bool {
@@ -142,18 +138,10 @@ final class SpeechModelDownloadManager {
     }
 
     private func markInstalled(_ model: SpeechRecognitionEngineID) async throws {
-        let metadata = SpeechModelInstallManifest(
-            id: model.rawValue,
-            runtime: model.isWhisperModel ? "whisper.cpp" : "apple-speech",
-            repository: model.repositoryID,
-            primaryModelFileName: model.primaryModelFileName,
-            installedAt: Date()
-        )
-
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(metadata)
+        let data = try encoder.encode(model.descriptor)
         try data.write(to: manifestURL(for: model), options: .atomic)
     }
 
@@ -240,14 +228,6 @@ private struct HuggingFaceSibling: Decodable {
 
 private struct RepositoryFile: Equatable {
     var path: String
-}
-
-private struct SpeechModelInstallManifest: Encodable {
-    var id: String
-    var runtime: String
-    var repository: String?
-    var primaryModelFileName: String?
-    var installedAt: Date
 }
 
 private enum SpeechModelDownloadError: LocalizedError {

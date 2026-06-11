@@ -29,6 +29,7 @@
 		A00000000000000000000087 /* ScriptFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000089 /* ScriptFormatting.swift */; };
 		A0000000000000000000008A /* ScriptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000008B /* ScriptEditorView.swift */; };
 		A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* SpeechRecognitionModel.swift */; };
+		A000000000000000000000A5 /* SpeechModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A6 /* SpeechModelCatalog.swift */; };
 		A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000092 /* SpeechRecognitionEngine.swift */; };
 		A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */; };
 		A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000094 /* ScriptProgressMatcher.swift */; };
@@ -64,6 +65,7 @@
 		A00000000000000000000089 /* ScriptFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptFormatting.swift; sourceTree = "<group>"; };
 		A0000000000000000000008B /* ScriptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEditorView.swift; sourceTree = "<group>"; };
 		A00000000000000000000091 /* SpeechRecognitionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionModel.swift; sourceTree = "<group>"; };
+		A000000000000000000000A6 /* SpeechModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelCatalog.swift; sourceTree = "<group>"; };
 		A00000000000000000000092 /* SpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngine.swift; sourceTree = "<group>"; };
 		A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
 		A00000000000000000000094 /* ScriptProgressMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptProgressMatcher.swift; sourceTree = "<group>"; };
@@ -213,6 +215,7 @@
 				A00000000000000000000016 /* ScriptCollection.swift */,
 				A00000000000000000000017 /* AppSettings.swift */,
 				A00000000000000000000091 /* SpeechRecognitionModel.swift */,
+				A000000000000000000000A6 /* SpeechModelCatalog.swift */,
 				A00000000000000000000089 /* ScriptFormatting.swift */,
 			);
 			path = Models;
@@ -401,6 +404,7 @@
 				A00000000000000000000006 /* ScriptCollection.swift in Sources */,
 				A00000000000000000000007 /* AppSettings.swift in Sources */,
 				A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */,
+				A000000000000000000000A5 /* SpeechModelCatalog.swift in Sources */,
 				A00000000000000000000008 /* PlaybackController.swift in Sources */,
 				A00000000000000000000009 /* OverlayWindowManager.swift in Sources */,
 				A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */,
