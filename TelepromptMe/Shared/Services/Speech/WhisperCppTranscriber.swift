@@ -56,7 +56,11 @@ final class WhisperCppTranscriber {
     private let modelURL: URL
 
     static var bundledExecutableURL: URL? {
-        Bundle.main.url(
+        bundledExecutableURL(in: .main)
+    }
+
+    static func bundledExecutableURL(in bundle: Bundle) -> URL? {
+        bundle.url(
             forResource: "whisper-cli",
             withExtension: nil,
             subdirectory: "whisper"
@@ -84,7 +88,12 @@ final class WhisperCppTranscriber {
 
         let process = Process()
         process.executableURL = executableURL
-        process.arguments = arguments(audioURL: audioURL, options: options)
+        process.arguments = Self.arguments(
+            executableURL: executableURL,
+            modelURL: modelURL,
+            audioURL: audioURL,
+            options: options
+        )
 
         let textOutputURL = Self.textOutputURL(for: audioURL)
         try? FileManager.default.removeItem(at: textOutputURL)
@@ -126,7 +135,9 @@ final class WhisperCppTranscriber {
         }
     }
 
-    private func arguments(
+    static func arguments(
+        executableURL: URL,
+        modelURL: URL,
         audioURL: URL,
         options: WhisperCppTranscriptionOptions
     ) -> [String] {
@@ -188,11 +199,11 @@ final class WhisperCppTranscriber {
         return String(data: data, encoding: .utf8) ?? ""
     }
 
-    private static func textOutputURL(for audioURL: URL) -> URL {
+    static func textOutputURL(for audioURL: URL) -> URL {
         URL(fileURLWithPath: audioURL.path + ".txt")
     }
 
-    private static func transcript(textOutputURL: URL, stdout: String) -> String {
+    static func transcript(textOutputURL: URL, stdout: String) -> String {
         if let sidecarTranscript = try? String(contentsOf: textOutputURL, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !sidecarTranscript.isEmpty {
@@ -202,7 +213,7 @@ final class WhisperCppTranscriber {
         return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private static func whisperLanguageCode(from localeIdentifier: String) -> String {
+    static func whisperLanguageCode(from localeIdentifier: String) -> String {
         let locale = Locale(identifier: localeIdentifier)
         return locale.language.languageCode?.identifier ?? localeIdentifier
     }

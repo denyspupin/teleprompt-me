@@ -246,6 +246,11 @@ struct SettingsView: View {
         }
     }
 
+    private var selectedSpeechModel: SpeechModelDescriptor {
+        SpeechModelCatalog.descriptor(for: currentSettings.resolvedSpeechModelID) ??
+            SpeechModelCatalog.builtInDescriptors[0]
+    }
+
     private var speechLocaleOptions: [Locale] {
         let defaults = [
             Locale(identifier: "en_US"),
@@ -255,15 +260,19 @@ struct SettingsView: View {
             Locale(identifier: "fr_FR"),
         ]
 
-        guard !defaults.map(\.identifier).contains(currentSettings.selectedSpeechLocaleIdentifier) else {
-            return defaults
+        let supportedIdentifiers = selectedSpeechModel.supportedLanguageIdentifiers
+        let supportedDefaults = supportedIdentifiers.isEmpty
+            ? defaults
+            : defaults.filter { supportedIdentifiers.contains($0.identifier) }
+        let baseOptions = supportedDefaults.isEmpty
+            ? supportedIdentifiers.map(Locale.init(identifier:))
+            : supportedDefaults
+
+        guard !baseOptions.map(\.identifier).contains(currentSettings.selectedSpeechLocaleIdentifier) else {
+            return baseOptions
         }
 
-        return [Locale(identifier: currentSettings.selectedSpeechLocaleIdentifier)] + defaults
-    }
-
-    private var supportedSpeechLocaleIdentifiers: Set<String> {
-        Set(speechLocaleOptions.map(\.identifier))
+        return [Locale(identifier: currentSettings.selectedSpeechLocaleIdentifier)] + baseOptions
     }
 
     private var shortcutsContent: some View {
@@ -530,6 +539,8 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 settingsTextColumn(title: model.title, subtitle: modelSubtitle(for: model))
 
+                modelMetadataBadges(for: model, state: state)
+
                 if case .failed(let message) = state {
                     Text(message)
                         .font(.system(size: 12))
@@ -593,21 +604,53 @@ struct SettingsView: View {
                     .frame(width: settingsControlColumnWidth)
 
                 Button("Cancel") {
-                    if let engineID = SpeechRecognitionEngineID(rawValue: model.id) {
-                        appState.speechModelDownloadManager.cancelDownload(for: engineID)
-                    }
+                    appState.speechModelDownloadManager.cancelDownload(for: model)
                 }
                 .controlSize(.small)
             }
         case .notDownloaded, .failed:
             Button("Download") {
-                if let engineID = SpeechRecognitionEngineID(rawValue: model.id) {
-                    appState.speechModelDownloadManager.download(engineID)
-                }
+                appState.speechModelDownloadManager.download(model)
             }
             .controlSize(.regular)
             .disabled(model.isBuiltIn)
         }
+    }
+
+    @ViewBuilder
+    private func modelMetadataBadges(
+        for model: SpeechModelDescriptor,
+        state: SpeechModelDownloadManager.DownloadState
+    ) -> some View {
+        FlowLayout(spacing: 6) {
+            if model.isRecommended {
+                modelBadge("Recommended")
+            }
+
+            if model.isCustom {
+                modelBadge("Custom")
+            }
+
+            if let estimatedDownloadSize = model.estimatedDownloadSize {
+                modelBadge(estimatedDownloadSize)
+            }
+
+            modelBadge(languageSupportText(for: model))
+
+            if state == .downloaded,
+               !appState.speechModelDownloadManager.isUsable(model) {
+                modelBadge("Incompatible", tint: .orange)
+            }
+        }
+    }
+
+    private func modelBadge(_ text: String, tint: Color = .secondary) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(tint.opacity(0.10), in: Capsule(style: .continuous))
     }
 
     private func modelSubtitle(for model: SpeechModelDescriptor) -> String {
@@ -617,11 +660,29 @@ struct SettingsView: View {
             return "\(model.subtitle) Downloaded files must include the expected whisper.cpp model file."
         }
 
-        if let estimatedDownloadSize = model.estimatedDownloadSize {
-            return "\(model.subtitle) Estimated download: \(estimatedDownloadSize)."
+        return model.subtitle
+    }
+
+    private func languageSupportText(for model: SpeechModelDescriptor) -> String {
+        guard !model.supportedLanguageIdentifiers.isEmpty else {
+            return "All configured languages"
         }
 
-        return model.subtitle
+        let languageNames = model.supportedLanguageIdentifiers
+            .prefix(3)
+            .map { languageDisplayName(for: $0) }
+        let remainingCount = model.supportedLanguageIdentifiers.count - languageNames.count
+
+        if remainingCount > 0 {
+            return "\(languageNames.joined(separator: ", ")) +\(remainingCount)"
+        }
+
+        return languageNames.joined(separator: ", ")
+    }
+
+    private func languageDisplayName(for identifier: String) -> String {
+        let locale = Locale(identifier: identifier)
+        return Locale.current.localizedString(forIdentifier: locale.identifier) ?? identifier
     }
 
     private func modelStatusText(for model: SpeechModelDescriptor) -> String {
@@ -770,6 +831,7 @@ struct SettingsView: View {
                 guard appState.speechModelDownloadManager.isUsable(newValue) else { return }
                 let settingsModel = currentSettingsModel()
                 settingsModel.selectedSpeechEngineID = newValue
+                resetUnsupportedSpeechLocaleIfNeeded(for: settingsModel)
                 try? modelContext.save()
                 appState.applySettings(settingsModel)
             }
@@ -797,6 +859,7 @@ struct SettingsView: View {
         guard appState.speechModelDownloadManager.isUsable(model) else { return }
         let settingsModel = currentSettingsModel()
         settingsModel.selectedSpeechEngineID = model.id
+        resetUnsupportedSpeechLocaleIfNeeded(for: settingsModel)
         try? modelContext.save()
         appState.applySettings(settingsModel)
     }
@@ -873,14 +936,107 @@ struct SettingsView: View {
 
     private func syncSettingsIntoAppState() {
         let settingsModel = currentSettingsModel()
-        if !supportedSpeechLocaleIdentifiers.contains(settingsModel.selectedSpeechLocaleIdentifier) {
-            settingsModel.selectedSpeechLocaleIdentifier = "en_US"
-            try? modelContext.save()
-        }
         if !appState.speechModelDownloadManager.isReady(settingsModel.selectedSpeechEngineID) {
             settingsModel.selectedSpeechEngineID = SpeechRecognitionEngineID.appleBuiltIn.rawValue
             try? modelContext.save()
         }
+        resetUnsupportedSpeechLocaleIfNeeded(for: settingsModel)
         appState.applySettings(settingsModel)
     }
+
+    private func resetUnsupportedSpeechLocaleIfNeeded(for settingsModel: AppSettings) {
+        let descriptor = SpeechModelCatalog.descriptor(for: settingsModel.resolvedSpeechModelID) ??
+            SpeechModelCatalog.builtInDescriptors[0]
+        let supportedIdentifiers = descriptor.supportedLanguageIdentifiers
+
+        guard !supportedIdentifiers.isEmpty,
+              !supportedIdentifiers.contains(settingsModel.selectedSpeechLocaleIdentifier) else {
+            return
+        }
+
+        if supportedIdentifiers.contains("en_US") {
+            settingsModel.selectedSpeechLocaleIdentifier = "en_US"
+        } else {
+            settingsModel.selectedSpeechLocaleIdentifier = supportedIdentifiers[0]
+        }
+        try? modelContext.save()
+    }
+}
+
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) -> CGSize {
+        let rows = rows(for: subviews, maxWidth: proposal.width ?? .infinity)
+        return CGSize(
+            width: rows.map(\.width).max() ?? 0,
+            height: rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+        )
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) {
+        let rows = rows(for: subviews, maxWidth: bounds.width)
+        var y = bounds.minY
+
+        for row in rows {
+            var x = bounds.minX
+            for item in row.items {
+                item.subview.place(
+                    at: CGPoint(x: x, y: y),
+                    proposal: ProposedViewSize(item.size)
+                )
+                x += item.size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private func rows(for subviews: Subviews, maxWidth: CGFloat) -> [FlowRow] {
+        var rows: [FlowRow] = []
+        var currentItems: [FlowItem] = []
+        var currentWidth: CGFloat = 0
+        var currentHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            let nextWidth = currentItems.isEmpty ? size.width : currentWidth + spacing + size.width
+
+            if nextWidth > maxWidth, !currentItems.isEmpty {
+                rows.append(FlowRow(items: currentItems, width: currentWidth, height: currentHeight))
+                currentItems = []
+                currentWidth = 0
+                currentHeight = 0
+            }
+
+            currentItems.append(FlowItem(subview: subview, size: size))
+            currentWidth = currentItems.count == 1 ? size.width : currentWidth + spacing + size.width
+            currentHeight = max(currentHeight, size.height)
+        }
+
+        if !currentItems.isEmpty {
+            rows.append(FlowRow(items: currentItems, width: currentWidth, height: currentHeight))
+        }
+
+        return rows
+    }
+}
+
+private struct FlowRow {
+    var items: [FlowItem]
+    var width: CGFloat
+    var height: CGFloat
+}
+
+private struct FlowItem {
+    var subview: LayoutSubview
+    var size: CGSize
 }

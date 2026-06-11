@@ -125,15 +125,13 @@ The first local runtime should be `whisperCpp`.
    - Generate local metadata.
    - Validate file existence and basic compatibility before selection.
 
-### Next
-
-1. Update Settings UI.
+10. Update Settings UI.
    - Show installed/downloading/incompatible states.
    - Show model size, language support, custom/recommended badges.
    - Provide download/cancel/delete/select/import actions.
    - Filter or reset language selection based on selected model support.
 
-2. Add focused tests.
+11. Add focused tests.
    - Catalog decoding/discovery.
    - Download state transitions.
    - SHA256 mismatch handling.
@@ -142,6 +140,10 @@ The first local runtime should be `whisperCpp`.
    - Whisper wrapper command construction.
    - Bundled runtime resolution.
    - File-level Whisper transcription using a fixture.
+
+### Next
+
+No planned implementation tasks remain in this phase.
 
 ## Notes From Handy
 

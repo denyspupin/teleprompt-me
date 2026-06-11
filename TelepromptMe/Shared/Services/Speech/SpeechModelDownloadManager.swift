@@ -12,13 +12,19 @@ final class SpeechModelDownloadManager {
         case failed(String)
     }
 
-    private(set) var states: [SpeechRecognitionEngineID: DownloadState] = [:]
+    private(set) var states: [String: DownloadState] = [:]
     private(set) var availableModels: [SpeechModelDescriptor] = SpeechModelCatalog.descriptors
-    private var downloadTasks: [SpeechRecognitionEngineID: Task<Void, Never>] = [:]
+    private var downloadableModels: [SpeechModelDescriptor] = SpeechModelCatalog.downloadableDescriptors
+    private var downloadTasks: [String: Task<Void, Never>] = [:]
     private let urlSession = URLSession.shared
 
-    init() {
+    init(refreshesHuggingFaceModels: Bool = true) {
         refreshInstalledModels()
+        if refreshesHuggingFaceModels {
+            Task { [weak self] in
+                await self?.refreshHuggingFaceModels()
+            }
+        }
     }
 
     func state(for model: SpeechRecognitionEngineID) -> DownloadState {
@@ -30,11 +36,7 @@ final class SpeechModelDownloadManager {
             return .downloaded
         }
 
-        guard let model = SpeechRecognitionEngineID(rawValue: descriptor.id) else {
-            return .notDownloaded
-        }
-
-        return states[model] ?? (isInstalled(model) ? .downloaded : .notDownloaded)
+        return states[descriptor.id] ?? (isInstalled(descriptor) ? .downloaded : .notDownloaded)
     }
 
     func isReady(_ modelID: String) -> Bool {
@@ -74,43 +76,52 @@ final class SpeechModelDownloadManager {
     }
 
     func download(_ model: SpeechRecognitionEngineID) {
-        guard !model.isBuiltIn else { return }
-        guard downloadTasks[model] == nil else { return }
+        download(model.descriptor)
+    }
 
-        states[model] = .downloading(progress: 0)
+    func download(_ descriptor: SpeechModelDescriptor) {
+        guard !descriptor.isBuiltIn else { return }
+        guard downloadTasks[descriptor.id] == nil else { return }
+
+        states[descriptor.id] = .downloading(progress: 0)
 
         let task = Task { [weak self] in
             guard let self else { return }
 
             do {
-                try await self.prepareModelDirectory(for: model)
-                try await self.downloadRepository(for: model)
-                try self.verifyDownloadedModel(model)
-                try await self.markInstalled(model)
+                try await self.prepareModelDirectory(for: descriptor)
+                try await self.downloadRepository(for: descriptor)
+                try self.verifyDownloadedModel(descriptor)
+                try await self.markInstalled(descriptor)
                 await MainActor.run {
-                    self.states[model] = .downloaded
-                    self.downloadTasks[model] = nil
+                    self.states[descriptor.id] = .downloaded
+                    self.downloadTasks[descriptor.id] = nil
+                    self.refreshInstalledModels()
                 }
             } catch is CancellationError {
                 await MainActor.run {
-                    self.cleanupPartialDownloads(for: model)
-                    self.states[model] = self.isInstalled(model) ? .downloaded : .notDownloaded
-                    self.downloadTasks[model] = nil
+                    self.cleanupPartialDownloads(for: descriptor)
+                    self.states[descriptor.id] = self.isInstalled(descriptor) ? .downloaded : .notDownloaded
+                    self.downloadTasks[descriptor.id] = nil
                 }
             } catch {
                 await MainActor.run {
-                    self.cleanupPartialDownloads(for: model)
-                    self.states[model] = .failed(error.localizedDescription)
-                    self.downloadTasks[model] = nil
+                    self.cleanupPartialDownloads(for: descriptor)
+                    self.states[descriptor.id] = .failed(error.localizedDescription)
+                    self.downloadTasks[descriptor.id] = nil
                 }
             }
         }
 
-        downloadTasks[model] = task
+        downloadTasks[descriptor.id] = task
     }
 
     func cancelDownload(for model: SpeechRecognitionEngineID) {
-        downloadTasks[model]?.cancel()
+        cancelDownload(for: model.descriptor)
+    }
+
+    func cancelDownload(for descriptor: SpeechModelDescriptor) {
+        downloadTasks[descriptor.id]?.cancel()
     }
 
     func delete(_ model: SpeechRecognitionEngineID) {
@@ -119,20 +130,20 @@ final class SpeechModelDownloadManager {
 
     func delete(_ descriptor: SpeechModelDescriptor) {
         guard !descriptor.isBuiltIn else { return }
-        guard let model = SpeechRecognitionEngineID(rawValue: descriptor.id) else {
+        guard SpeechRecognitionEngineID(rawValue: descriptor.id) != nil || descriptor.repositoryID != nil else {
             deleteCustomModel(descriptor)
             return
         }
 
-        cancelDownload(for: model)
+        cancelDownload(for: descriptor)
 
         do {
-            try FileManager.default.removeItem(at: directoryURL(for: model))
-            states[model] = .notDownloaded
+            try FileManager.default.removeItem(at: SpeechModelStorage.directoryURL(forModelID: descriptor.id))
+            states[descriptor.id] = .notDownloaded
         } catch CocoaError.fileNoSuchFile {
-            states[model] = .notDownloaded
+            states[descriptor.id] = .notDownloaded
         } catch {
-            states[model] = .failed(error.localizedDescription)
+            states[descriptor.id] = .failed(error.localizedDescription)
         }
 
         refreshInstalledModels()
@@ -169,7 +180,7 @@ final class SpeechModelDownloadManager {
             subtitle: "Imported whisper.cpp model.",
             repositoryID: nil,
             primaryModelFileName: sourceFileName,
-            checksumSHA256: try sha256HexDigest(for: destinationURL),
+            checksumSHA256: try Self.sha256HexDigest(for: destinationURL),
             estimatedByteSize: fileSize.map(Int64.init),
             supportedLanguageIdentifiers: [],
             isCustom: true,
@@ -189,10 +200,68 @@ final class SpeechModelDownloadManager {
     }
 
     func refreshInstalledModels() {
-        for model in SpeechRecognitionEngineID.allCases where !model.isBuiltIn {
-            states[model] = isInstalled(model) ? .downloaded : .notDownloaded
+        rebuildAvailableModels()
+        for descriptor in availableModels where !descriptor.isBuiltIn && !descriptor.isCustom {
+            if downloadTasks[descriptor.id] == nil {
+                states[descriptor.id] = isInstalled(descriptor) ? .downloaded : .notDownloaded
+            }
         }
-        availableModels = SpeechModelCatalog.descriptors
+    }
+
+    func refreshHuggingFaceModels() async {
+        do {
+            let modelFiles = try await repositoryFiles(for: SpeechModelCatalog.whisperCppRepositoryID)
+                .map(\.path)
+                .filter(SpeechModelCatalog.isWhisperCppModelFile)
+                .sorted()
+            let descriptors = try await descriptorsWithResolvedSizes(for: modelFiles)
+
+            guard !descriptors.isEmpty else {
+                return
+            }
+
+            downloadableModels = descriptors
+            refreshInstalledModels()
+        } catch {
+            NSLog("TelepromptMe could not refresh Hugging Face speech models: \(error.localizedDescription)")
+        }
+    }
+
+    private func descriptorsWithResolvedSizes(for fileNames: [String]) async throws -> [SpeechModelDescriptor] {
+        var descriptors: [SpeechModelDescriptor] = []
+        descriptors.reserveCapacity(fileNames.count)
+
+        for fileName in fileNames {
+            try Task.checkCancellation()
+            var descriptor = SpeechModelCatalog.whisperCppDescriptor(for: fileName)
+            descriptor.estimatedByteSize = try await modelFileSize(
+                repositoryID: SpeechModelCatalog.whisperCppRepositoryID,
+                filePath: fileName
+            ) ?? descriptor.estimatedByteSize
+            descriptors.append(descriptor)
+        }
+
+        return descriptors
+    }
+
+    private func modelFileSize(repositoryID: String, filePath: String) async throws -> Int64? {
+        let url = try Self.resolveURL(repositoryID: repositoryID, filePath: filePath)
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+
+        let (_, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<400).contains(httpResponse.statusCode) else {
+            return nil
+        }
+
+        return Self.byteSize(from: httpResponse)
+    }
+
+    private func rebuildAvailableModels() {
+        availableModels = SpeechModelCatalog.builtInDescriptors +
+            downloadableModels +
+            SpeechModelCatalog.customDescriptors()
     }
 
     func directoryURL(for model: SpeechRecognitionEngineID) -> URL {
@@ -208,67 +277,68 @@ final class SpeechModelDownloadManager {
     }
 
     private func isInstalled(_ model: SpeechRecognitionEngineID) -> Bool {
-        FileManager.default.fileExists(atPath: manifestURL(for: model).path)
+        isInstalled(model.descriptor)
     }
 
-    private func prepareModelDirectory(for model: SpeechRecognitionEngineID) async throws {
+    private func manifestURL(for descriptor: SpeechModelDescriptor) -> URL {
+        SpeechModelStorage.directoryURL(forModelID: descriptor.id)
+            .appendingPathComponent(SpeechModelStorage.manifestFileName)
+    }
+
+    private func isInstalled(_ descriptor: SpeechModelDescriptor) -> Bool {
+        FileManager.default.fileExists(atPath: manifestURL(for: descriptor).path)
+    }
+
+    private func prepareModelDirectory(for descriptor: SpeechModelDescriptor) async throws {
         try FileManager.default.createDirectory(
-            at: directoryURL(for: model),
+            at: SpeechModelStorage.directoryURL(forModelID: descriptor.id),
             withIntermediateDirectories: true
         )
     }
 
-    private func markInstalled(_ model: SpeechRecognitionEngineID) async throws {
+    private func markInstalled(_ descriptor: SpeechModelDescriptor) async throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(model.descriptor)
-        try data.write(to: manifestURL(for: model), options: .atomic)
+        let data = try encoder.encode(descriptor)
+        try data.write(to: manifestURL(for: descriptor), options: .atomic)
     }
 
-    private func downloadRepository(for model: SpeechRecognitionEngineID) async throws {
-        guard let repositoryID = model.repositoryID else { return }
+    private func downloadRepository(for descriptor: SpeechModelDescriptor) async throws {
+        guard let repositoryID = descriptor.repositoryID else { return }
+        guard let primaryModelFileName = descriptor.primaryModelFileName else {
+            throw SpeechModelDownloadError.missingPrimaryModelFile(descriptor.title)
+        }
 
         let files = try await repositoryFiles(for: repositoryID)
-            .filter { !$0.path.hasPrefix(".") && !$0.path.contains("/.") }
-
-        guard !files.isEmpty else {
-            throw SpeechModelDownloadError.emptyRepository
+        guard let modelFile = files.first(where: { $0.path == primaryModelFileName }) else {
+            throw SpeechModelDownloadError.modelFileNotFound(primaryModelFileName, repositoryID)
         }
 
-        let knownTotalBytes = files.reduce(Int64(0)) { total, file in
-            guard let size = file.size else { return total }
-            return total + size
-        }
-        var completedBytes: Int64 = 0
+        let sourceURL = try Self.resolveURL(repositoryID: repositoryID, filePath: modelFile.path)
+        let totalBytes = modelFile.size ?? descriptor.estimatedByteSize ?? 0
 
-        for (index, file) in files.enumerated() {
-            try Task.checkCancellation()
-            let sourceURL = try resolveURL(repositoryID: repositoryID, filePath: file.path)
-            let (downloadedBytes, expectedBytes) = try await downloadFile(
-                from: sourceURL,
-                to: directoryURL(for: model).appendingPathComponent(file.path),
-                model: model,
-                filePath: file.path,
-                completedBytes: completedBytes,
-                totalBytes: knownTotalBytes,
-                completedFileCount: index,
-                totalFileCount: files.count
-            )
+        try Task.checkCancellation()
+        let (_, expectedBytes) = try await downloadFile(
+            from: sourceURL,
+            to: SpeechModelStorage.directoryURL(forModelID: descriptor.id).appendingPathComponent(modelFile.path),
+            modelID: descriptor.id,
+            filePath: modelFile.path,
+            completedBytes: 0,
+            totalBytes: totalBytes,
+            completedFileCount: 0,
+            totalFileCount: 1
+        )
 
-            completedBytes += file.size ?? expectedBytes ?? downloadedBytes
-            if knownTotalBytes > 0 {
-                states[model] = .downloading(progress: min(1, Double(completedBytes) / Double(knownTotalBytes)))
-            } else {
-                states[model] = .downloading(progress: Double(index + 1) / Double(files.count))
-            }
+        if totalBytes > 0 || expectedBytes != nil {
+            states[descriptor.id] = .downloading(progress: 1)
         }
     }
 
     private func downloadFile(
         from sourceURL: URL,
         to destinationURL: URL,
-        model: SpeechRecognitionEngineID,
+        modelID: String,
         filePath: String,
         completedBytes: Int64,
         totalBytes: Int64,
@@ -295,7 +365,7 @@ final class SpeechModelDownloadManager {
             try? fileHandle.close()
         }
 
-        let expectedBytes = httpResponse.expectedContentLength > 0 ? httpResponse.expectedContentLength : nil
+        let expectedBytes = Self.byteSize(from: httpResponse)
         var downloadedBytes: Int64 = 0
         var buffer: [UInt8] = []
         buffer.reserveCapacity(64 * 1024)
@@ -308,7 +378,7 @@ final class SpeechModelDownloadManager {
             if buffer.count >= 64 * 1024 {
                 try fileHandle.write(contentsOf: Data(buffer))
                 buffer.removeAll(keepingCapacity: true)
-                states[model] = .downloading(
+                states[modelID] = .downloading(
                     progress: downloadProgress(
                         downloadedFileBytes: downloadedBytes,
                         expectedFileBytes: expectedBytes,
@@ -356,19 +426,31 @@ final class SpeechModelDownloadManager {
         return min(1, (Double(completedFileCount) + fileProgress) / Double(totalFileCount))
     }
 
-    private func verifyDownloadedModel(_ model: SpeechRecognitionEngineID) throws {
-        guard let expectedChecksum = model.descriptor.checksumSHA256,
-              let modelFileURL = SpeechModelStorage.modelFileURL(for: model) else {
+    private func verifyDownloadedModel(_ descriptor: SpeechModelDescriptor) throws {
+        guard let expectedChecksum = descriptor.checksumSHA256,
+              let modelFileURL = SpeechModelStorage.modelFileURL(for: descriptor) else {
             return
         }
 
-        let actualChecksum = try sha256HexDigest(for: modelFileURL)
+        try Self.verifyChecksum(
+            for: modelFileURL,
+            expectedChecksum: expectedChecksum,
+            modelName: descriptor.title
+        )
+    }
+
+    static func verifyChecksum(
+        for fileURL: URL,
+        expectedChecksum: String,
+        modelName: String
+    ) throws {
+        let actualChecksum = try sha256HexDigest(for: fileURL)
         guard actualChecksum.caseInsensitiveCompare(expectedChecksum) == .orderedSame else {
-            throw SpeechModelDownloadError.checksumMismatch(model.title)
+            throw SpeechModelDownloadError.checksumMismatch(modelName)
         }
     }
 
-    private func sha256HexDigest(for fileURL: URL) throws -> String {
+    static func sha256HexDigest(for fileURL: URL) throws -> String {
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
         defer {
             try? fileHandle.close()
@@ -386,9 +468,9 @@ final class SpeechModelDownloadManager {
             .joined()
     }
 
-    private func cleanupPartialDownloads(for model: SpeechRecognitionEngineID) {
+    private func cleanupPartialDownloads(for descriptor: SpeechModelDescriptor) {
         guard let enumerator = FileManager.default.enumerator(
-            at: directoryURL(for: model),
+            at: SpeechModelStorage.directoryURL(forModelID: descriptor.id),
             includingPropertiesForKeys: nil
         ) else {
             return
@@ -449,13 +531,8 @@ final class SpeechModelDownloadManager {
         return slug.isEmpty ? "whisper-model" : slug
     }
 
-    private func repositoryFiles(for repositoryID: String) async throws -> [RepositoryFile] {
-        let encodedRepositoryID = repositoryID
-            .split(separator: "/")
-            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
-            .joined(separator: "/")
-
-        guard let url = URL(string: "https://huggingface.co/api/models/\(encodedRepositoryID)") else {
+    func repositoryFiles(for repositoryID: String) async throws -> [RepositoryFile] {
+        guard let url = Self.repositoryAPIURL(for: repositoryID) else {
             throw SpeechModelDownloadError.invalidRepository(repositoryID)
         }
 
@@ -469,21 +546,53 @@ final class SpeechModelDownloadManager {
         return modelInfo.siblings.map { RepositoryFile(path: $0.rfilename, size: $0.size) }
     }
 
-    private func resolveURL(repositoryID: String, filePath: String) throws -> URL {
-        let encodedRepositoryID = repositoryID
-            .split(separator: "/")
-            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
-            .joined(separator: "/")
-        let encodedFilePath = filePath
-            .split(separator: "/")
-            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
-            .joined(separator: "/")
+    static func repositoryAPIURL(for repositoryID: String) -> URL? {
+        URL(string: "https://huggingface.co/api/models/\(encodedRepositoryID(repositoryID))")
+    }
 
-        guard let url = URL(string: "https://huggingface.co/\(encodedRepositoryID)/resolve/main/\(encodedFilePath)") else {
+    static func resolveURL(repositoryID: String, filePath: String) throws -> URL {
+        guard let url = URL(string: "https://huggingface.co/\(encodedRepositoryID(repositoryID))/resolve/main/\(encodedFilePath(filePath))") else {
             throw SpeechModelDownloadError.downloadFailed(filePath)
         }
 
         return url
+    }
+
+    static func byteSize(from response: HTTPURLResponse) -> Int64? {
+        if let linkedSize = headerValue("X-Linked-Size", in: response),
+           let linkedByteSize = Int64(linkedSize) {
+            return linkedByteSize
+        }
+
+        if let contentLength = headerValue("Content-Length", in: response),
+           let contentByteSize = Int64(contentLength) {
+            return contentByteSize
+        }
+
+        return response.expectedContentLength > 0 ? response.expectedContentLength : nil
+    }
+
+    private static func headerValue(_ name: String, in response: HTTPURLResponse) -> String? {
+        response.allHeaderFields.first { key, _ in
+            guard let key = key as? String else { return false }
+            return key.caseInsensitiveCompare(name) == .orderedSame
+        }?.value as? String
+    }
+
+    private static func encodedRepositoryID(_ repositoryID: String) -> String {
+        let encodedRepositoryID = repositoryID
+            .split(separator: "/")
+            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+            .joined(separator: "/")
+
+        return encodedRepositoryID
+    }
+
+    private static func encodedFilePath(_ filePath: String) -> String {
+        filePath
+            .split(separator: "/")
+            .map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }
+            .joined(separator: "/")
     }
 }
 
@@ -496,14 +605,15 @@ private struct HuggingFaceSibling: Decodable {
     var size: Int64?
 }
 
-private struct RepositoryFile: Equatable {
+struct RepositoryFile: Equatable {
     var path: String
     var size: Int64?
 }
 
 private enum SpeechModelDownloadError: LocalizedError {
     case invalidRepository(String)
-    case emptyRepository
+    case missingPrimaryModelFile(String)
+    case modelFileNotFound(String, String)
     case downloadFailed(String)
     case checksumMismatch(String)
 
@@ -511,8 +621,10 @@ private enum SpeechModelDownloadError: LocalizedError {
         switch self {
         case .invalidRepository(let repositoryID):
             return "Could not read model repository \(repositoryID)."
-        case .emptyRepository:
-            return "The selected model repository has no downloadable files."
+        case .missingPrimaryModelFile(let modelName):
+            return "\(modelName) does not declare a Hugging Face model file to download."
+        case .modelFileNotFound(let fileName, let repositoryID):
+            return "Could not find \(fileName) in Hugging Face repository \(repositoryID)."
         case .downloadFailed(let filePath):
             return "Could not download \(filePath)."
         case .checksumMismatch(let modelName):

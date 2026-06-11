@@ -2,9 +2,14 @@ import Foundation
 
 enum SpeechModelStorage {
     static let manifestFileName = "model.json"
+    static var modelsDirectoryOverrideURL: URL?
 
     static var modelsDirectoryURL: URL {
-        applicationSupportURL.appendingPathComponent("SpeechModels", isDirectory: true)
+        if let modelsDirectoryOverrideURL {
+            return modelsDirectoryOverrideURL
+        }
+
+        return applicationSupportURL.appendingPathComponent("SpeechModels", isDirectory: true)
     }
 
     static func directoryURL(for model: SpeechRecognitionEngineID) -> URL {

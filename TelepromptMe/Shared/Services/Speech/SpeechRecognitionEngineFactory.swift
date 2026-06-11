@@ -2,6 +2,18 @@ import Foundation
 
 enum SpeechRecognitionEngineFactory {
     static func makeEngine(for engineID: String) -> SpeechRecognitionEngine {
+        makeEngine(
+            for: engineID,
+            fileExists: FileManager.default.fileExists(atPath:),
+            bundledExecutableURL: WhisperCppTranscriber.bundledExecutableURL
+        )
+    }
+
+    static func makeEngine(
+        for engineID: String,
+        fileExists: (String) -> Bool,
+        bundledExecutableURL: URL?
+    ) -> SpeechRecognitionEngine {
         let resolvedEngineID = SpeechModelCatalog.resolvedModelID(for: engineID)
         guard let descriptor = SpeechModelCatalog.descriptor(for: resolvedEngineID),
               descriptor.isWhisperModel else {
@@ -9,8 +21,8 @@ enum SpeechRecognitionEngineFactory {
         }
 
         guard let modelURL = SpeechModelStorage.modelFileURL(for: descriptor),
-              FileManager.default.fileExists(atPath: modelURL.path),
-              WhisperCppTranscriber.bundledExecutableURL != nil else {
+              fileExists(modelURL.path),
+              bundledExecutableURL != nil else {
             return AppleSpeechRecognitionEngine()
         }
 
