@@ -2,7 +2,8 @@ import Foundation
 
 enum SpeechRecognitionEngineFactory {
     static func makeEngine(for engineID: String) -> SpeechRecognitionEngine {
-        guard let descriptor = SpeechModelCatalog.descriptor(for: engineID),
+        let resolvedEngineID = SpeechModelCatalog.resolvedModelID(for: engineID)
+        guard let descriptor = SpeechModelCatalog.descriptor(for: resolvedEngineID),
               descriptor.isWhisperModel else {
             return AppleSpeechRecognitionEngine()
         }

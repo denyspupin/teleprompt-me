@@ -9,6 +9,7 @@ struct SettingsView: View {
 
     @Binding var selectedSection: SettingsSection
     @State private var editingShortcut: AppShortcutCommand?
+    @State private var modelImportError: String?
 
     private let availableFonts = NSFontManager.shared.availableFontFamilies.sorted()
     private let fontSizeOptions = [20, 24, 30, 36, 42, 48, 56, 64, 72, 84, 96]
@@ -165,8 +166,8 @@ struct SettingsView: View {
                         subtitle: "Choose the local model used to follow your spoken script.",
                         selection: speechEngineSelectionBinding
                     ) {
-                        ForEach(readySpeechEngines) { engine in
-                            Text(engine.title).tag(engine.rawValue)
+                        ForEach(readySpeechModels) { model in
+                            Text(model.title).tag(model.id)
                         }
                     }
 
@@ -201,10 +202,33 @@ struct SettingsView: View {
 
             settingsSection(title: "Available Models") {
                 settingsCard {
-                    ForEach(Array(SpeechRecognitionEngineID.allCases.enumerated()), id: \.element) { index, model in
+                    rowContainer {
+                        settingsTextColumn(
+                            title: "Import Whisper Model",
+                            subtitle: "Add a local whisper.cpp .bin model file."
+                        )
+
+                        Spacer(minLength: 24)
+
+                        Button("Import") {
+                            importCustomSpeechModel()
+                        }
+                        .controlSize(.regular)
+                    }
+
+                    if let modelImportError {
+                        rowContainer(showsDivider: true) {
+                            Text(modelImportError)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    ForEach(Array(availableSpeechModels.enumerated()), id: \.element.id) { index, model in
                         modelRow(
                             model: model,
-                            showsDivider: index < SpeechRecognitionEngineID.allCases.count - 1
+                            showsDivider: index < availableSpeechModels.count - 1
                         )
                     }
                 }
@@ -212,8 +236,12 @@ struct SettingsView: View {
         }
     }
 
-    private var readySpeechEngines: [SpeechRecognitionEngineID] {
-        SpeechRecognitionEngineID.allCases.filter { model in
+    private var availableSpeechModels: [SpeechModelDescriptor] {
+        appState.speechModelDownloadManager.availableModels
+    }
+
+    private var readySpeechModels: [SpeechModelDescriptor] {
+        availableSpeechModels.filter { model in
             appState.speechModelDownloadManager.isUsable(model)
         }
     }
@@ -493,7 +521,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func modelRow(
-        model: SpeechRecognitionEngineID,
+        model: SpeechModelDescriptor,
         showsDivider: Bool = true
     ) -> some View {
         let state = appState.speechModelDownloadManager.state(for: model)
@@ -519,7 +547,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func modelControl(
-        for model: SpeechRecognitionEngineID,
+        for model: SpeechModelDescriptor,
         state: SpeechModelDownloadManager.DownloadState
     ) -> some View {
         switch state {
@@ -536,7 +564,7 @@ struct SettingsView: View {
                         in: Capsule(style: .continuous)
                     )
 
-                if currentSettings.resolvedSpeechEngineID == model && appState.speechModelDownloadManager.isUsable(model) {
+                if currentSettings.resolvedSpeechModelID == model.id && appState.speechModelDownloadManager.isUsable(model) {
                     Text("In use")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
@@ -565,20 +593,24 @@ struct SettingsView: View {
                     .frame(width: settingsControlColumnWidth)
 
                 Button("Cancel") {
-                    appState.speechModelDownloadManager.cancelDownload(for: model)
+                    if let engineID = SpeechRecognitionEngineID(rawValue: model.id) {
+                        appState.speechModelDownloadManager.cancelDownload(for: engineID)
+                    }
                 }
                 .controlSize(.small)
             }
         case .notDownloaded, .failed:
             Button("Download") {
-                appState.speechModelDownloadManager.download(model)
+                if let engineID = SpeechRecognitionEngineID(rawValue: model.id) {
+                    appState.speechModelDownloadManager.download(engineID)
+                }
             }
             .controlSize(.regular)
             .disabled(model.isBuiltIn)
         }
     }
 
-    private func modelSubtitle(for model: SpeechRecognitionEngineID) -> String {
+    private func modelSubtitle(for model: SpeechModelDescriptor) -> String {
         if !model.isBuiltIn,
            appState.speechModelDownloadManager.state(for: model) == .downloaded,
            !appState.speechModelDownloadManager.isUsable(model) {
@@ -592,9 +624,13 @@ struct SettingsView: View {
         return model.subtitle
     }
 
-    private func modelStatusText(for model: SpeechRecognitionEngineID) -> String {
+    private func modelStatusText(for model: SpeechModelDescriptor) -> String {
         if model.isBuiltIn {
             return "Built in"
+        }
+
+        if model.isCustom {
+            return "Imported"
         }
 
         return appState.speechModelDownloadManager.isUsable(model) ? "Downloaded" : "Incompatible"
@@ -728,7 +764,7 @@ struct SettingsView: View {
     private var speechEngineSelectionBinding: Binding<String> {
         Binding(
             get: {
-                currentSettings.resolvedSpeechEngineID.rawValue
+                currentSettings.resolvedSpeechModelID
             },
             set: { newValue in
                 guard appState.speechModelDownloadManager.isUsable(newValue) else { return }
@@ -757,19 +793,44 @@ struct SettingsView: View {
         return defaults
     }
 
-    private func selectSpeechEngine(_ model: SpeechRecognitionEngineID) {
+    private func selectSpeechEngine(_ model: SpeechModelDescriptor) {
         guard appState.speechModelDownloadManager.isUsable(model) else { return }
         let settingsModel = currentSettingsModel()
-        settingsModel.selectedSpeechEngineID = model.rawValue
+        settingsModel.selectedSpeechEngineID = model.id
         try? modelContext.save()
         appState.applySettings(settingsModel)
     }
 
-    private func deleteSpeechModel(_ model: SpeechRecognitionEngineID) {
+    private func deleteSpeechModel(_ model: SpeechModelDescriptor) {
+        let wasSelectedModel = currentSettings.selectedSpeechEngineID == model.id ||
+            currentSettings.resolvedSpeechModelID == model.id
         appState.speechModelDownloadManager.delete(model)
 
-        if currentSettings.resolvedSpeechEngineID == model {
-            selectSpeechEngine(.appleBuiltIn)
+        if wasSelectedModel,
+           let appleBuiltIn = appState.speechModelDownloadManager.availableModels.first(where: \.isBuiltIn) {
+            selectSpeechEngine(appleBuiltIn)
+        }
+    }
+
+    private func importCustomSpeechModel() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.data]
+        panel.nameFieldLabel = "Whisper model:"
+        panel.prompt = "Import"
+
+        guard panel.runModal() == .OK, let selectedURL = panel.url else {
+            return
+        }
+
+        do {
+            let descriptor = try appState.speechModelDownloadManager.importCustomModel(from: selectedURL)
+            modelImportError = nil
+            selectSpeechEngine(descriptor)
+        } catch {
+            modelImportError = error.localizedDescription
         }
     }
 

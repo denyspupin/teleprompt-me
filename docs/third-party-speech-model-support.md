@@ -119,21 +119,21 @@ The first local runtime should be `whisperCpp`.
    - Cleanup of interrupted downloads.
    - Delete/unload behavior for active models.
 
-### Next
-
-1. Add custom model import.
+9. Add custom model import.
    - Start with user-selected Whisper model files (`.bin`, later `.gguf` if the
      chosen whisper.cpp build supports it).
    - Generate local metadata.
    - Validate file existence and basic compatibility before selection.
 
-2. Update Settings UI.
+### Next
+
+1. Update Settings UI.
    - Show installed/downloading/incompatible states.
    - Show model size, language support, custom/recommended badges.
    - Provide download/cancel/delete/select/import actions.
    - Filter or reset language selection based on selected model support.
 
-3. Add focused tests.
+2. Add focused tests.
    - Catalog decoding/discovery.
    - Download state transitions.
    - SHA256 mismatch handling.

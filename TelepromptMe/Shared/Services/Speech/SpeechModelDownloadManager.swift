@@ -13,6 +13,7 @@ final class SpeechModelDownloadManager {
     }
 
     private(set) var states: [SpeechRecognitionEngineID: DownloadState] = [:]
+    private(set) var availableModels: [SpeechModelDescriptor] = SpeechModelCatalog.descriptors
     private var downloadTasks: [SpeechRecognitionEngineID: Task<Void, Never>] = [:]
     private let urlSession = URLSession.shared
 
@@ -21,8 +22,16 @@ final class SpeechModelDownloadManager {
     }
 
     func state(for model: SpeechRecognitionEngineID) -> DownloadState {
-        if model.isBuiltIn {
+        state(for: model.descriptor)
+    }
+
+    func state(for descriptor: SpeechModelDescriptor) -> DownloadState {
+        if descriptor.isBuiltIn || descriptor.isCustom {
             return .downloaded
+        }
+
+        guard let model = SpeechRecognitionEngineID(rawValue: descriptor.id) else {
+            return .notDownloaded
         }
 
         return states[model] ?? (isInstalled(model) ? .downloaded : .notDownloaded)
@@ -33,28 +42,34 @@ final class SpeechModelDownloadManager {
     }
 
     func isUsable(_ modelID: String) -> Bool {
-        guard let model = SpeechRecognitionEngineID(rawValue: modelID) else {
+        guard let descriptor = SpeechModelCatalog.descriptor(for: modelID) else {
             return false
         }
 
-        return isUsable(model)
+        return isUsable(descriptor)
     }
 
     func isUsable(_ model: SpeechRecognitionEngineID) -> Bool {
-        guard state(for: model) == .downloaded else {
+        isUsable(model.descriptor)
+    }
+
+    func isUsable(_ descriptor: SpeechModelDescriptor) -> Bool {
+        guard state(for: descriptor) == .downloaded else {
             return false
         }
 
-        guard !model.isBuiltIn else {
+        guard !descriptor.isBuiltIn else {
             return true
         }
 
-        guard model.isWhisperModel, let modelFileName = model.primaryModelFileName else {
+        guard descriptor.isWhisperModel, let modelFileName = descriptor.primaryModelFileName else {
             return false
         }
 
         return FileManager.default.fileExists(
-            atPath: directoryURL(for: model).appendingPathComponent(modelFileName).path
+            atPath: SpeechModelStorage.directoryURL(forModelID: descriptor.id)
+                .appendingPathComponent(modelFileName)
+                .path
         )
     }
 
@@ -99,7 +114,16 @@ final class SpeechModelDownloadManager {
     }
 
     func delete(_ model: SpeechRecognitionEngineID) {
-        guard !model.isBuiltIn else { return }
+        delete(model.descriptor)
+    }
+
+    func delete(_ descriptor: SpeechModelDescriptor) {
+        guard !descriptor.isBuiltIn else { return }
+        guard let model = SpeechRecognitionEngineID(rawValue: descriptor.id) else {
+            deleteCustomModel(descriptor)
+            return
+        }
+
         cancelDownload(for: model)
 
         do {
@@ -110,12 +134,65 @@ final class SpeechModelDownloadManager {
         } catch {
             states[model] = .failed(error.localizedDescription)
         }
+
+        refreshInstalledModels()
+    }
+
+    func importCustomModel(from sourceURL: URL) throws -> SpeechModelDescriptor {
+        guard sourceURL.pathExtension.lowercased() == "bin" else {
+            throw SpeechModelImportError.unsupportedFileType
+        }
+
+        guard FileManager.default.fileExists(atPath: sourceURL.path) else {
+            throw SpeechModelImportError.missingFile
+        }
+
+        let sourceFileName = sourceURL.lastPathComponent
+        let baseName = sourceURL.deletingPathExtension().lastPathComponent
+        let modelID = uniqueCustomModelID(for: baseName)
+        let modelDirectoryURL = SpeechModelStorage.directoryURL(forModelID: modelID)
+        let destinationURL = modelDirectoryURL.appendingPathComponent(sourceFileName)
+
+        try FileManager.default.createDirectory(
+            at: modelDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        removeFileIfNeeded(at: destinationURL)
+        try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+
+        let fileSize = try destinationURL.resourceValues(forKeys: [.fileSizeKey]).fileSize
+        let descriptor = SpeechModelDescriptor(
+            id: modelID,
+            runtime: .whisperCpp,
+            architecture: .whisper,
+            title: baseName.isEmpty ? "Custom Whisper Model" : baseName,
+            subtitle: "Imported whisper.cpp model.",
+            repositoryID: nil,
+            primaryModelFileName: sourceFileName,
+            checksumSHA256: try sha256HexDigest(for: destinationURL),
+            estimatedByteSize: fileSize.map(Int64.init),
+            supportedLanguageIdentifiers: [],
+            isCustom: true,
+            isRecommended: false
+        )
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(descriptor)
+        try data.write(
+            to: modelDirectoryURL.appendingPathComponent(SpeechModelStorage.manifestFileName),
+            options: .atomic
+        )
+
+        refreshInstalledModels()
+        return descriptor
     }
 
     func refreshInstalledModels() {
         for model in SpeechRecognitionEngineID.allCases where !model.isBuiltIn {
             states[model] = isInstalled(model) ? .downloaded : .notDownloaded
         }
+        availableModels = SpeechModelCatalog.descriptors
     }
 
     func directoryURL(for model: SpeechRecognitionEngineID) -> URL {
@@ -334,6 +411,44 @@ final class SpeechModelDownloadManager {
         try? FileManager.default.removeItem(at: url)
     }
 
+    private func deleteCustomModel(_ descriptor: SpeechModelDescriptor) {
+        do {
+            try FileManager.default.removeItem(at: SpeechModelStorage.directoryURL(forModelID: descriptor.id))
+        } catch CocoaError.fileNoSuchFile {
+        } catch {
+            NSLog("TelepromptMe could not delete custom speech model: \(error.localizedDescription)")
+        }
+
+        refreshInstalledModels()
+    }
+
+    private func uniqueCustomModelID(for name: String) -> String {
+        let slug = sanitizedModelSlug(from: name)
+        var candidate = "custom-\(slug)"
+        var suffix = 2
+
+        while FileManager.default.fileExists(
+            atPath: SpeechModelStorage.directoryURL(forModelID: candidate).path
+        ) {
+            candidate = "custom-\(slug)-\(suffix)"
+            suffix += 1
+        }
+
+        return candidate
+    }
+
+    private func sanitizedModelSlug(from name: String) -> String {
+        let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-"))
+        let slug = name
+            .lowercased()
+            .replacingOccurrences(of: "_", with: "-")
+            .components(separatedBy: allowedCharacters.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: "-")
+
+        return slug.isEmpty ? "whisper-model" : slug
+    }
+
     private func repositoryFiles(for repositoryID: String) async throws -> [RepositoryFile] {
         let encodedRepositoryID = repositoryID
             .split(separator: "/")
@@ -402,6 +517,20 @@ private enum SpeechModelDownloadError: LocalizedError {
             return "Could not download \(filePath)."
         case .checksumMismatch(let modelName):
             return "\(modelName) did not match its expected checksum."
+        }
+    }
+}
+
+private enum SpeechModelImportError: LocalizedError {
+    case unsupportedFileType
+    case missingFile
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedFileType:
+            return "Choose a whisper.cpp model file with a .bin extension."
+        case .missingFile:
+            return "The selected model file could not be found."
         }
     }
 }
