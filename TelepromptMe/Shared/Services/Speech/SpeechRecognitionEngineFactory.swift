@@ -12,8 +12,7 @@ enum SpeechRecognitionEngineFactory {
         for engineID: String,
         fileExists: (String) -> Bool
     ) -> SpeechRecognitionEngine {
-        let resolvedEngineID = SpeechModelCatalog.resolvedModelID(for: engineID)
-        guard let descriptor = SpeechModelCatalog.descriptor(for: resolvedEngineID),
+        guard let descriptor = SpeechModelCatalog.descriptor(for: engineID),
               descriptor.isWhisperModel else {
             return AppleSpeechRecognitionEngine()
         }

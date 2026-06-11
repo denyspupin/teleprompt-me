@@ -247,8 +247,14 @@ struct SettingsView: View {
     }
 
     private var selectedSpeechModel: SpeechModelDescriptor {
-        SpeechModelCatalog.descriptor(for: currentSettings.resolvedSpeechModelID) ??
+        appState.speechModelDownloadManager.descriptor(for: selectedSpeechModelID) ??
             SpeechModelCatalog.builtInDescriptors[0]
+    }
+
+    private var selectedSpeechModelID: String {
+        appState.speechModelDownloadManager.isUsable(currentSettings.selectedSpeechEngineID)
+            ? currentSettings.selectedSpeechEngineID
+            : SpeechModelCatalog.builtInAppleSpeechID
     }
 
     private var speechLocaleOptions: [Locale] {
@@ -575,7 +581,7 @@ struct SettingsView: View {
                         in: Capsule(style: .continuous)
                     )
 
-                if currentSettings.resolvedSpeechModelID == model.id && appState.speechModelDownloadManager.isUsable(model) {
+                if selectedSpeechModelID == model.id && appState.speechModelDownloadManager.isUsable(model) {
                     Text("In use")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
@@ -629,6 +635,10 @@ struct SettingsView: View {
 
             if model.isCustom {
                 modelBadge("Custom")
+            }
+
+            if !model.auxiliaryModelFileNames.isEmpty {
+                modelBadge("Core ML")
             }
 
             if let estimatedDownloadSize = model.estimatedDownloadSize {
@@ -825,7 +835,7 @@ struct SettingsView: View {
     private var speechEngineSelectionBinding: Binding<String> {
         Binding(
             get: {
-                currentSettings.resolvedSpeechModelID
+                selectedSpeechModelID
             },
             set: { newValue in
                 guard appState.speechModelDownloadManager.isUsable(newValue) else { return }
@@ -866,7 +876,7 @@ struct SettingsView: View {
 
     private func deleteSpeechModel(_ model: SpeechModelDescriptor) {
         let wasSelectedModel = currentSettings.selectedSpeechEngineID == model.id ||
-            currentSettings.resolvedSpeechModelID == model.id
+            selectedSpeechModelID == model.id
         appState.speechModelDownloadManager.delete(model)
 
         if wasSelectedModel,
@@ -945,7 +955,7 @@ struct SettingsView: View {
     }
 
     private func resetUnsupportedSpeechLocaleIfNeeded(for settingsModel: AppSettings) {
-        let descriptor = SpeechModelCatalog.descriptor(for: settingsModel.resolvedSpeechModelID) ??
+        let descriptor = appState.speechModelDownloadManager.descriptor(for: settingsModel.selectedSpeechEngineID) ??
             SpeechModelCatalog.builtInDescriptors[0]
         let supportedIdentifiers = descriptor.supportedLanguageIdentifiers
 

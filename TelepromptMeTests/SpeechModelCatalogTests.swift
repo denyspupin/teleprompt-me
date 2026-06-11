@@ -157,6 +157,45 @@ final class SpeechModelCatalogTests: XCTestCase {
         XCTAssertEqual(descriptors.map(\.primaryModelFileName), ["ggml-small.bin", "ggml-small-q5_1.bin"])
     }
 
+    func testWhisperCppDescriptorIncludesMatchingCoreMLArchive() {
+        XCTAssertEqual(
+            SpeechModelCatalog.whisperCppCoreMLArchiveFileNames(for: "ggml-base.en.bin"),
+            ["ggml-base.en-encoder.mlmodelc.zip"]
+        )
+        XCTAssertEqual(
+            SpeechModelCatalog.whisperCppCoreMLArchiveFileNames(for: "ggml-small-q5_1.bin"),
+            ["ggml-small-encoder.mlmodelc.zip"]
+        )
+    }
+
+    func testInstalledDescriptorDiscoveryIncludesDownloadedManifest() throws {
+        let descriptor = SpeechModelDescriptor(
+            id: "whisper-distil-large",
+            runtime: .whisperCpp,
+            architecture: .whisper,
+            title: "Whisper Distil Large",
+            subtitle: "Downloaded whisper.cpp model.",
+            repositoryID: "example/whisper",
+            primaryModelFileName: "ggml-distil-large.bin",
+            auxiliaryModelFileNames: ["ggml-distil-large-encoder.mlmodelc.zip"],
+            checksumSHA256: nil,
+            estimatedByteSize: 7,
+            supportedLanguageIdentifiers: [],
+            isCustom: false,
+            isRecommended: false
+        )
+        let modelDirectory = SpeechModelStorage.directoryURL(forModelID: descriptor.id)
+        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        try Data("model".utf8).write(to: modelDirectory.appendingPathComponent("ggml-distil-large.bin"))
+        try JSONEncoder().encode(descriptor).write(
+            to: modelDirectory.appendingPathComponent(SpeechModelStorage.manifestFileName)
+        )
+
+        XCTAssertTrue(SpeechModelCatalog.installedDescriptors().contains(descriptor))
+        XCTAssertEqual(SpeechModelCatalog.descriptor(for: descriptor.id), descriptor)
+        XCTAssertEqual(SpeechModelCatalog.resolvedModelID(for: descriptor.id), descriptor.id)
+    }
+
     func testHuggingFaceLinkedSizeHeaderIsUsedAsByteSize() throws {
         let response = try XCTUnwrap(
             HTTPURLResponse(
