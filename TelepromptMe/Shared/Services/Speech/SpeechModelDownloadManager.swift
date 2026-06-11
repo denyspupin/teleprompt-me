@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Observation
 
@@ -69,6 +70,7 @@ final class SpeechModelDownloadManager {
             do {
                 try await self.prepareModelDirectory(for: model)
                 try await self.downloadRepository(for: model)
+                try self.verifyDownloadedModel(model)
                 try await self.markInstalled(model)
                 await MainActor.run {
                     self.states[model] = .downloaded
@@ -76,11 +78,13 @@ final class SpeechModelDownloadManager {
                 }
             } catch is CancellationError {
                 await MainActor.run {
+                    self.cleanupPartialDownloads(for: model)
                     self.states[model] = self.isInstalled(model) ? .downloaded : .notDownloaded
                     self.downloadTasks[model] = nil
                 }
             } catch {
                 await MainActor.run {
+                    self.cleanupPartialDownloads(for: model)
                     self.states[model] = .failed(error.localizedDescription)
                     self.downloadTasks[model] = nil
                 }
@@ -155,29 +159,179 @@ final class SpeechModelDownloadManager {
             throw SpeechModelDownloadError.emptyRepository
         }
 
+        let knownTotalBytes = files.reduce(Int64(0)) { total, file in
+            guard let size = file.size else { return total }
+            return total + size
+        }
+        var completedBytes: Int64 = 0
+
         for (index, file) in files.enumerated() {
             try Task.checkCancellation()
             let sourceURL = try resolveURL(repositoryID: repositoryID, filePath: file.path)
-            let (temporaryURL, response) = try await urlSession.download(from: sourceURL)
-
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200..<300).contains(httpResponse.statusCode) else {
-                throw SpeechModelDownloadError.downloadFailed(file.path)
-            }
-
-            let destinationURL = directoryURL(for: model).appendingPathComponent(file.path)
-            try FileManager.default.createDirectory(
-                at: destinationURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
+            let (downloadedBytes, expectedBytes) = try await downloadFile(
+                from: sourceURL,
+                to: directoryURL(for: model).appendingPathComponent(file.path),
+                model: model,
+                filePath: file.path,
+                completedBytes: completedBytes,
+                totalBytes: knownTotalBytes,
+                completedFileCount: index,
+                totalFileCount: files.count
             )
 
-            if FileManager.default.fileExists(atPath: destinationURL.path) {
-                try FileManager.default.removeItem(at: destinationURL)
+            completedBytes += file.size ?? expectedBytes ?? downloadedBytes
+            if knownTotalBytes > 0 {
+                states[model] = .downloading(progress: min(1, Double(completedBytes) / Double(knownTotalBytes)))
+            } else {
+                states[model] = .downloading(progress: Double(index + 1) / Double(files.count))
             }
-
-            try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
-            states[model] = .downloading(progress: Double(index + 1) / Double(files.count))
         }
+    }
+
+    private func downloadFile(
+        from sourceURL: URL,
+        to destinationURL: URL,
+        model: SpeechRecognitionEngineID,
+        filePath: String,
+        completedBytes: Int64,
+        totalBytes: Int64,
+        completedFileCount: Int,
+        totalFileCount: Int
+    ) async throws -> (downloadedBytes: Int64, expectedBytes: Int64?) {
+        try FileManager.default.createDirectory(
+            at: destinationURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+
+        let partialURL = partialDownloadURL(for: destinationURL)
+        removeFileIfNeeded(at: partialURL)
+
+        let (bytes, response) = try await urlSession.bytes(from: sourceURL)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw SpeechModelDownloadError.downloadFailed(filePath)
+        }
+
+        FileManager.default.createFile(atPath: partialURL.path, contents: nil)
+        let fileHandle = try FileHandle(forWritingTo: partialURL)
+        defer {
+            try? fileHandle.close()
+        }
+
+        let expectedBytes = httpResponse.expectedContentLength > 0 ? httpResponse.expectedContentLength : nil
+        var downloadedBytes: Int64 = 0
+        var buffer: [UInt8] = []
+        buffer.reserveCapacity(64 * 1024)
+
+        for try await byte in bytes {
+            try Task.checkCancellation()
+            buffer.append(byte)
+            downloadedBytes += 1
+
+            if buffer.count >= 64 * 1024 {
+                try fileHandle.write(contentsOf: Data(buffer))
+                buffer.removeAll(keepingCapacity: true)
+                states[model] = .downloading(
+                    progress: downloadProgress(
+                        downloadedFileBytes: downloadedBytes,
+                        expectedFileBytes: expectedBytes,
+                        completedBytes: completedBytes,
+                        totalBytes: totalBytes,
+                        completedFileCount: completedFileCount,
+                        totalFileCount: totalFileCount
+                    )
+                )
+            }
+        }
+
+        if !buffer.isEmpty {
+            try fileHandle.write(contentsOf: Data(buffer))
+        }
+
+        removeFileIfNeeded(at: destinationURL)
+        try FileManager.default.moveItem(at: partialURL, to: destinationURL)
+        return (downloadedBytes, expectedBytes)
+    }
+
+    private func downloadProgress(
+        downloadedFileBytes: Int64,
+        expectedFileBytes: Int64?,
+        completedBytes: Int64,
+        totalBytes: Int64,
+        completedFileCount: Int,
+        totalFileCount: Int
+    ) -> Double {
+        if totalBytes > 0 {
+            return min(1, Double(completedBytes + downloadedFileBytes) / Double(totalBytes))
+        }
+
+        guard totalFileCount > 0 else {
+            return 0
+        }
+
+        let fileProgress: Double
+        if let expectedFileBytes, expectedFileBytes > 0 {
+            fileProgress = min(1, Double(downloadedFileBytes) / Double(expectedFileBytes))
+        } else {
+            fileProgress = 0
+        }
+
+        return min(1, (Double(completedFileCount) + fileProgress) / Double(totalFileCount))
+    }
+
+    private func verifyDownloadedModel(_ model: SpeechRecognitionEngineID) throws {
+        guard let expectedChecksum = model.descriptor.checksumSHA256,
+              let modelFileURL = SpeechModelStorage.modelFileURL(for: model) else {
+            return
+        }
+
+        let actualChecksum = try sha256HexDigest(for: modelFileURL)
+        guard actualChecksum.caseInsensitiveCompare(expectedChecksum) == .orderedSame else {
+            throw SpeechModelDownloadError.checksumMismatch(model.title)
+        }
+    }
+
+    private func sha256HexDigest(for fileURL: URL) throws -> String {
+        let fileHandle = try FileHandle(forReadingFrom: fileURL)
+        defer {
+            try? fileHandle.close()
+        }
+
+        var sha256 = SHA256()
+        while true {
+            let data = try fileHandle.read(upToCount: 1024 * 1024) ?? Data()
+            guard !data.isEmpty else { break }
+            sha256.update(data: data)
+        }
+
+        return sha256.finalize()
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+
+    private func cleanupPartialDownloads(for model: SpeechRecognitionEngineID) {
+        guard let enumerator = FileManager.default.enumerator(
+            at: directoryURL(for: model),
+            includingPropertiesForKeys: nil
+        ) else {
+            return
+        }
+
+        for case let fileURL as URL in enumerator where fileURL.pathExtension == "partial" {
+            removeFileIfNeeded(at: fileURL)
+        }
+    }
+
+    private func partialDownloadURL(for destinationURL: URL) -> URL {
+        destinationURL.appendingPathExtension("partial")
+    }
+
+    private func removeFileIfNeeded(at url: URL) {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return
+        }
+
+        try? FileManager.default.removeItem(at: url)
     }
 
     private func repositoryFiles(for repositoryID: String) async throws -> [RepositoryFile] {
@@ -197,7 +351,7 @@ final class SpeechModelDownloadManager {
         }
 
         let modelInfo = try JSONDecoder().decode(HuggingFaceModelInfo.self, from: data)
-        return modelInfo.siblings.map { RepositoryFile(path: $0.rfilename) }
+        return modelInfo.siblings.map { RepositoryFile(path: $0.rfilename, size: $0.size) }
     }
 
     private func resolveURL(repositoryID: String, filePath: String) throws -> URL {
@@ -224,16 +378,19 @@ private struct HuggingFaceModelInfo: Decodable {
 
 private struct HuggingFaceSibling: Decodable {
     var rfilename: String
+    var size: Int64?
 }
 
 private struct RepositoryFile: Equatable {
     var path: String
+    var size: Int64?
 }
 
 private enum SpeechModelDownloadError: LocalizedError {
     case invalidRepository(String)
     case emptyRepository
     case downloadFailed(String)
+    case checksumMismatch(String)
 
     var errorDescription: String? {
         switch self {
@@ -243,6 +400,8 @@ private enum SpeechModelDownloadError: LocalizedError {
             return "The selected model repository has no downloadable files."
         case .downloadFailed(let filePath):
             return "Could not download \(filePath)."
+        case .checksumMismatch(let modelName):
+            return "\(modelName) did not match its expected checksum."
         }
     }
 }
