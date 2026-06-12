@@ -16,9 +16,13 @@ final class SpeechModelDownloadManager {
     private(set) var availableModels: [SpeechModelDescriptor] = SpeechModelCatalog.descriptors
     private var downloadableModels: [SpeechModelDescriptor] = SpeechModelCatalog.downloadableDescriptors
     private var downloadTasks: [String: Task<Void, Never>] = [:]
-    private let urlSession = URLSession.shared
+    private let urlSession: URLSession
 
-    init(refreshesHuggingFaceModels: Bool = true) {
+    init(
+        refreshesHuggingFaceModels: Bool = true,
+        urlSession: URLSession = SpeechModelDownloadManager.makeDownloadSession()
+    ) {
+        self.urlSession = urlSession
         refreshInstalledModels()
         if refreshesHuggingFaceModels {
             Task { [weak self] in
@@ -149,56 +153,6 @@ final class SpeechModelDownloadManager {
         refreshInstalledModels()
     }
 
-    func importCustomModel(from sourceURL: URL) throws -> SpeechModelDescriptor {
-        guard sourceURL.pathExtension.lowercased() == "bin" else {
-            throw SpeechModelImportError.unsupportedFileType
-        }
-
-        guard FileManager.default.fileExists(atPath: sourceURL.path) else {
-            throw SpeechModelImportError.missingFile
-        }
-
-        let sourceFileName = sourceURL.lastPathComponent
-        let baseName = sourceURL.deletingPathExtension().lastPathComponent
-        let modelID = uniqueCustomModelID(for: baseName)
-        let modelDirectoryURL = SpeechModelStorage.directoryURL(forModelID: modelID)
-        let destinationURL = modelDirectoryURL.appendingPathComponent(sourceFileName)
-
-        try FileManager.default.createDirectory(
-            at: modelDirectoryURL,
-            withIntermediateDirectories: true
-        )
-        removeFileIfNeeded(at: destinationURL)
-        try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-
-        let fileSize = try destinationURL.resourceValues(forKeys: [.fileSizeKey]).fileSize
-        let descriptor = SpeechModelDescriptor(
-            id: modelID,
-            runtime: .whisperCpp,
-            architecture: .whisper,
-            title: baseName.isEmpty ? "Custom Whisper Model" : baseName,
-            subtitle: "Imported whisper.cpp model.",
-            repositoryID: nil,
-            primaryModelFileName: sourceFileName,
-            checksumSHA256: try Self.sha256HexDigest(for: destinationURL),
-            estimatedByteSize: fileSize.map(Int64.init),
-            supportedLanguageIdentifiers: [],
-            isCustom: true,
-            isRecommended: false
-        )
-
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(descriptor)
-        try data.write(
-            to: modelDirectoryURL.appendingPathComponent(SpeechModelStorage.manifestFileName),
-            options: .atomic
-        )
-
-        refreshInstalledModels()
-        return descriptor
-    }
-
     func refreshInstalledModels() {
         rebuildAvailableModels()
         for descriptor in availableModels where !descriptor.isBuiltIn && !descriptor.isCustom {
@@ -323,9 +277,12 @@ final class SpeechModelDownloadManager {
             files.first { $0.path == fileName }
         }
         let filesToDownload = [modelFile] + optionalFiles
-        let totalBytes = filesToDownload.reduce(Int64(0)) { partialResult, file in
-            partialResult + (file.size ?? (file.path == modelFile.path ? descriptor.estimatedByteSize : nil) ?? 0)
+        let fileByteSizes = filesToDownload.map { file in
+            file.size ?? (file.path == modelFile.path ? descriptor.estimatedByteSize : nil)
         }
+        let totalBytes = fileByteSizes.allSatisfy { $0 != nil }
+            ? fileByteSizes.compactMap { $0 }.reduce(0, +)
+            : nil
         var completedBytes: Int64 = 0
         var completedFileCount = 0
         var downloadedExpectedBytes: Int64?
@@ -354,7 +311,7 @@ final class SpeechModelDownloadManager {
             }
         }
 
-        if totalBytes > 0 || downloadedExpectedBytes != nil {
+        if totalBytes != nil || downloadedExpectedBytes != nil {
             states[descriptor.id] = .downloading(progress: 1)
         }
     }
@@ -365,7 +322,7 @@ final class SpeechModelDownloadManager {
         modelID: String,
         filePath: String,
         completedBytes: Int64,
-        totalBytes: Int64,
+        totalBytes: Int64?,
         completedFileCount: Int,
         totalFileCount: Int
     ) async throws -> (downloadedBytes: Int64, expectedBytes: Int64?) {
@@ -377,7 +334,20 @@ final class SpeechModelDownloadManager {
         let partialURL = partialDownloadURL(for: destinationURL)
         removeFileIfNeeded(at: partialURL)
 
-        let (bytes, response) = try await urlSession.bytes(from: sourceURL)
+        var request = URLRequest(url: sourceURL)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 300
+
+        let bytes: URLSession.AsyncBytes
+        let response: URLResponse
+        do {
+            (bytes, response) = try await urlSession.bytes(for: request)
+        } catch let error as URLError where error.code == .timedOut {
+            throw SpeechModelDownloadError.downloadTimedOut(filePath)
+        } catch {
+            throw SpeechModelDownloadError.downloadFailed(filePath)
+        }
+
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
             throw SpeechModelDownloadError.downloadFailed(filePath)
@@ -428,11 +398,11 @@ final class SpeechModelDownloadManager {
         downloadedFileBytes: Int64,
         expectedFileBytes: Int64?,
         completedBytes: Int64,
-        totalBytes: Int64,
+        totalBytes: Int64?,
         completedFileCount: Int,
         totalFileCount: Int
     ) -> Double {
-        if totalBytes > 0 {
+        if let totalBytes, totalBytes > 0 {
             return min(1, Double(completedBytes + downloadedFileBytes) / Double(totalBytes))
         }
 
@@ -517,6 +487,16 @@ final class SpeechModelDownloadManager {
         try? FileManager.default.removeItem(at: url)
     }
 
+    nonisolated private static func makeDownloadSession() -> URLSession {
+        let configuration = URLSessionConfiguration.default
+        configuration.waitsForConnectivity = true
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.timeoutIntervalForRequest = 300
+        configuration.timeoutIntervalForResource = 24 * 60 * 60
+        configuration.httpMaximumConnectionsPerHost = 3
+        return URLSession(configuration: configuration)
+    }
+
     private func deleteCustomModel(_ descriptor: SpeechModelDescriptor) {
         do {
             try FileManager.default.removeItem(at: SpeechModelStorage.directoryURL(forModelID: descriptor.id))
@@ -526,33 +506,6 @@ final class SpeechModelDownloadManager {
         }
 
         refreshInstalledModels()
-    }
-
-    private func uniqueCustomModelID(for name: String) -> String {
-        let slug = sanitizedModelSlug(from: name)
-        var candidate = "custom-\(slug)"
-        var suffix = 2
-
-        while FileManager.default.fileExists(
-            atPath: SpeechModelStorage.directoryURL(forModelID: candidate).path
-        ) {
-            candidate = "custom-\(slug)-\(suffix)"
-            suffix += 1
-        }
-
-        return candidate
-    }
-
-    private func sanitizedModelSlug(from name: String) -> String {
-        let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-"))
-        let slug = name
-            .lowercased()
-            .replacingOccurrences(of: "_", with: "-")
-            .components(separatedBy: allowedCharacters.inverted)
-            .filter { !$0.isEmpty }
-            .joined(separator: "-")
-
-        return slug.isEmpty ? "whisper-model" : slug
     }
 
     func repositoryFiles(for repositoryID: String) async throws -> [RepositoryFile] {
@@ -679,6 +632,7 @@ private enum SpeechModelDownloadError: LocalizedError {
     case missingPrimaryModelFile(String)
     case modelFileNotFound(String, String)
     case downloadFailed(String)
+    case downloadTimedOut(String)
     case checksumMismatch(String)
     case coreMLArchiveExpansionFailed(String)
 
@@ -692,24 +646,12 @@ private enum SpeechModelDownloadError: LocalizedError {
             return "Could not find \(fileName) in Hugging Face repository \(repositoryID)."
         case .downloadFailed(let filePath):
             return "Could not download \(filePath)."
+        case .downloadTimedOut(let filePath):
+            return "Download timed out for \(filePath). Check your connection and try again."
         case .checksumMismatch(let modelName):
             return "\(modelName) did not match its expected checksum."
         case .coreMLArchiveExpansionFailed(let fileName):
             return "Could not expand the Core ML model archive \(fileName)."
-        }
-    }
-}
-
-private enum SpeechModelImportError: LocalizedError {
-    case unsupportedFileType
-    case missingFile
-
-    var errorDescription: String? {
-        switch self {
-        case .unsupportedFileType:
-            return "Choose a whisper.cpp model file with a .bin extension."
-        case .missingFile:
-            return "The selected model file could not be found."
         }
     }
 }

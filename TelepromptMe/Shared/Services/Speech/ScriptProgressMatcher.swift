@@ -33,8 +33,9 @@ final class ScriptProgressMatcher {
         let spoken = Self.tokenize(transcript).map(\.value)
         guard spoken.count >= 2 else { return nil }
 
-        let newTokenCount = max(0, spoken.count - lastTranscriptTokenCount)
-        lastTranscriptTokenCount = max(lastTranscriptTokenCount, spoken.count)
+        let previousTranscriptTokenCount = lastTranscriptTokenCount
+        let newTokenCount = max(0, spoken.count - previousTranscriptTokenCount)
+        lastTranscriptTokenCount = spoken.count
 
         let phraseLength = min(8, max(3, newTokenCount + 4))
         let phrase = Array(spoken.suffix(phraseLength))
@@ -66,7 +67,8 @@ final class ScriptProgressMatcher {
 
         guard bestRawScore >= sensitivity else { return nil }
 
-        let maximumAdvance = max(2, newTokenCount + 3)
+        let matchedAdvance = max(0, bestIndex - currentWordIndex)
+        let maximumAdvance = max(2, newTokenCount + 3, matchedAdvance)
         currentWordIndex = min(max(currentWordIndex, bestIndex), currentWordIndex + maximumAdvance)
         return ScriptProgressMatch(
             wordIndex: currentWordIndex,
