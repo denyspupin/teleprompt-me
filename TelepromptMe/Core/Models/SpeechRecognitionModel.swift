@@ -2,51 +2,43 @@ import Foundation
 
 enum SpeechRecognitionEngineID: String, CaseIterable, Identifiable {
     case appleBuiltIn = "apple-built-in"
-    case parakeetV3 = "parakeet-v3"
+    case whisperSmall = "whisper-small"
 
     var id: String { rawValue }
 
     var title: String {
-        switch self {
-        case .appleBuiltIn:
-            return "Apple Built-In"
-        case .parakeetV3:
-            return "Parakeet v3"
-        }
+        descriptor.title
     }
 
     var subtitle: String {
-        switch self {
-        case .appleBuiltIn:
-            return "Uses the local speech recognition model included with macOS."
-        case .parakeetV3:
-            return "A downloadable local model for offline speech recognition."
-        }
+        descriptor.subtitle
     }
 
     var isBuiltIn: Bool {
-        self == .appleBuiltIn
+        descriptor.isBuiltIn
+    }
+
+    var isWhisperModel: Bool {
+        descriptor.isWhisperModel
     }
 
     var estimatedDownloadSize: String? {
-        switch self {
-        case .appleBuiltIn:
-            return nil
-        case .parakeetV3:
-            return "755 MB"
-        }
+        descriptor.estimatedDownloadSize
     }
 
     var repositoryID: String? {
-        switch self {
-        case .appleBuiltIn:
-            return nil
-        case .parakeetV3:
-            return "sonic-speech/parakeet-tdt-0.6b-v3-int8"
-        }
+        descriptor.repositoryID
     }
 
     var manifestFileName: String {
-        "\(rawValue).model"
+        SpeechModelStorage.manifestFileName
+    }
+
+    var primaryModelFileName: String? {
+        descriptor.primaryModelFileName
+    }
+
+    var descriptor: SpeechModelDescriptor {
+        SpeechModelCatalog.descriptor(for: self)
     }
 }
