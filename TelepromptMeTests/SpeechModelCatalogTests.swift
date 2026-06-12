@@ -101,23 +101,32 @@ final class SpeechModelCatalogTests: XCTestCase {
         XCTAssertEqual(SpeechModelCatalog.resolvedModelID(for: descriptor.id), descriptor.id)
     }
 
-    func testCustomImportAndDeleteUpdateManagerState() throws {
-        let sourceURL = temporaryModelsDirectory
-            .appendingPathComponent("source", isDirectory: true)
-            .appendingPathComponent("tiny.bin")
-        try FileManager.default.createDirectory(
-            at: sourceURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
+    func testCustomDeleteUpdatesManagerState() throws {
+        let descriptor = SpeechModelDescriptor(
+            id: "custom-tiny",
+            runtime: .whisperCpp,
+            architecture: .whisper,
+            title: "Tiny",
+            subtitle: "Custom whisper.cpp model.",
+            repositoryID: nil,
+            primaryModelFileName: "tiny.bin",
+            checksumSHA256: nil,
+            estimatedByteSize: nil,
+            supportedLanguageIdentifiers: [],
+            isCustom: true,
+            isRecommended: false
         )
-        try Data("tiny model".utf8).write(to: sourceURL)
+        let modelDirectory = SpeechModelStorage.directoryURL(forModelID: descriptor.id)
+        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        try Data("tiny model".utf8).write(to: modelDirectory.appendingPathComponent("tiny.bin"))
+        try JSONEncoder().encode(descriptor).write(
+            to: modelDirectory.appendingPathComponent(SpeechModelStorage.manifestFileName)
+        )
 
         let manager = SpeechModelDownloadManager(refreshesHuggingFaceModels: false)
-        let descriptor = try manager.importCustomModel(from: sourceURL)
-
         XCTAssertTrue(descriptor.isCustom)
         XCTAssertEqual(manager.state(for: descriptor), .downloaded)
         XCTAssertTrue(manager.isUsable(descriptor))
-        XCTAssertNotNil(descriptor.checksumSHA256)
 
         manager.delete(descriptor)
 

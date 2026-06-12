@@ -25,4 +25,27 @@ final class WhisperCppTranscriberTests: XCTestCase {
 
         XCTAssertEqual(buffer.allSamples(), [3])
     }
+
+    func testProgressMatcherAdvancesWithRollingWhisperTranscripts() {
+        let matcher = ScriptProgressMatcher()
+        matcher.prepare(
+            script: """
+            Welcome to the product update. Today we will cover design changes, \
+            platform improvements, and the launch plan for next week.
+            """
+        )
+
+        let firstMatch = matcher.match(
+            transcript: "Welcome to the product update",
+            sensitivity: 0.7
+        )
+        let secondMatch = matcher.match(
+            transcript: "Today we will cover design changes",
+            sensitivity: 0.7
+        )
+
+        XCTAssertNotNil(firstMatch)
+        XCTAssertNotNil(secondMatch)
+        XCTAssertGreaterThan(secondMatch?.wordIndex ?? 0, firstMatch?.wordIndex ?? 0)
+    }
 }

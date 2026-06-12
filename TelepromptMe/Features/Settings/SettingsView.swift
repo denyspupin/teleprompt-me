@@ -9,7 +9,6 @@ struct SettingsView: View {
 
     @Binding var selectedSection: SettingsSection
     @State private var editingShortcut: AppShortcutCommand?
-    @State private var modelImportError: String?
 
     private let availableFonts = NSFontManager.shared.availableFontFamilies.sorted()
     private let fontSizeOptions = [20, 24, 30, 36, 42, 48, 56, 64, 72, 84, 96]
@@ -200,40 +199,44 @@ struct SettingsView: View {
                 }
             }
 
-            settingsSection(title: "Available Models") {
+            settingsSection(title: "On-Device Model") {
                 settingsCard {
-                    rowContainer {
-                        settingsTextColumn(
-                            title: "Import Whisper Model",
-                            subtitle: "Add a local whisper.cpp .bin model file."
-                        )
+                    modelRow(model: builtInSpeechModel, showsDivider: false)
+                }
+            }
 
-                        Spacer(minLength: 24)
-
-                        Button("Import") {
-                            importCustomSpeechModel()
-                        }
-                        .controlSize(.regular)
-                    }
-
-                    if let modelImportError {
-                        rowContainer(showsDivider: true) {
-                            Text(modelImportError)
-                                .font(.system(size: 12))
-                                .foregroundStyle(.red)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-
-                    ForEach(Array(availableSpeechModels.enumerated()), id: \.element.id) { index, model in
+            settingsSection(title: "Downloadable Models") {
+                settingsCard {
+                    ForEach(Array(downloadableSpeechModels.enumerated()), id: \.element.id) { index, model in
                         modelRow(
                             model: model,
-                            showsDivider: index < availableSpeechModels.count - 1
+                            showsDivider: index < downloadableSpeechModels.count - 1
                         )
                     }
                 }
             }
         }
+    }
+
+    private var builtInSpeechModel: SpeechModelDescriptor {
+        availableSpeechModels.first(where: \.isBuiltIn) ?? SpeechModelCatalog.builtInDescriptors[0]
+    }
+
+    private var downloadableSpeechModels: [SpeechModelDescriptor] {
+        availableSpeechModels
+            .enumerated()
+            .filter { !$0.element.isBuiltIn }
+            .sorted { lhs, rhs in
+                let lhsDownloaded = appState.speechModelDownloadManager.state(for: lhs.element) == .downloaded
+                let rhsDownloaded = appState.speechModelDownloadManager.state(for: rhs.element) == .downloaded
+
+                if lhsDownloaded != rhsDownloaded {
+                    return lhsDownloaded
+                }
+
+                return lhs.offset < rhs.offset
+            }
+            .map(\.element)
     }
 
     private var availableSpeechModels: [SpeechModelDescriptor] {
@@ -606,8 +609,16 @@ struct SettingsView: View {
             }
         case .downloading(let progress):
             VStack(alignment: .trailing, spacing: 8) {
-                ProgressView(value: progress)
-                    .frame(width: settingsControlColumnWidth)
+                HStack(spacing: 8) {
+                    ProgressView(value: progress)
+                        .frame(width: 180)
+
+                    Text(downloadProgressText(progress))
+                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, alignment: .trailing)
+                }
+                .frame(width: settingsControlColumnWidth, alignment: .trailing)
 
                 Button("Cancel") {
                     appState.speechModelDownloadManager.cancelDownload(for: model)
@@ -674,8 +685,12 @@ struct SettingsView: View {
     }
 
     private func languageSupportText(for model: SpeechModelDescriptor) -> String {
-        guard !model.supportedLanguageIdentifiers.isEmpty else {
-            return "All configured languages"
+        if model.isBuiltIn {
+            return "macOS Speech locales"
+        }
+
+        if model.supportedLanguageIdentifiers.isEmpty {
+            return model.isWhisperModel ? "Multilingual" : "Language unrestricted"
         }
 
         let languageNames = model.supportedLanguageIdentifiers
@@ -688,6 +703,12 @@ struct SettingsView: View {
         }
 
         return languageNames.joined(separator: ", ")
+    }
+
+    private func downloadProgressText(_ progress: Double) -> String {
+        let normalizedProgress = min(max(progress, 0), 1)
+        let percent = Int((normalizedProgress * 100).rounded())
+        return "\(percent)%"
     }
 
     private func languageDisplayName(for identifier: String) -> String {
@@ -882,28 +903,6 @@ struct SettingsView: View {
         if wasSelectedModel,
            let appleBuiltIn = appState.speechModelDownloadManager.availableModels.first(where: \.isBuiltIn) {
             selectSpeechEngine(appleBuiltIn)
-        }
-    }
-
-    private func importCustomSpeechModel() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.data]
-        panel.nameFieldLabel = "Whisper model:"
-        panel.prompt = "Import"
-
-        guard panel.runModal() == .OK, let selectedURL = panel.url else {
-            return
-        }
-
-        do {
-            let descriptor = try appState.speechModelDownloadManager.importCustomModel(from: selectedURL)
-            modelImportError = nil
-            selectSpeechEngine(descriptor)
-        } catch {
-            modelImportError = error.localizedDescription
         }
     }
 
