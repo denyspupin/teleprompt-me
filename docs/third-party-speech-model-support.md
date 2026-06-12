@@ -62,48 +62,48 @@ The first local runtime should be `whisperCpp`.
    - Kept Apple Speech as the fallback runtime.
    - Chose whisper.cpp as the first third-party local runtime.
 
-2. Add the initial whisper.cpp Swift wrapper.
+2. Add the native whisper.cpp Swift wrapper.
    - Added `WhisperCppTranscriber`.
-   - Wrapped `whisper-cli` through `Process`.
-   - Added validation for executable, model, and audio file paths.
-   - Added cancellation handling.
-   - Added bundled executable resolution through
-     `WhisperCppTranscriber.bundledExecutableURL`.
+   - Replaced the `whisper-cli` process wrapper with an actor-isolated wrapper
+     around the whisper.cpp C API.
+   - Loads the selected `ggml-*.bin` model with
+     `whisper_init_from_file_with_params`.
+   - Runs transcription in process with `whisper_full`.
+   - Keeps language, translation, timestamp, context, and single-segment options
+     in Swift.
 
-3. Bundle the whisper.cpp runtime.
+3. Bundle the whisper.cpp native framework.
    - Added `scripts/build-whisper-cpp.sh`.
    - Pinned whisper.cpp to commit `99613cb720b65036237d44b52f753b51f75c2797`.
-   - Builds `whisper-cli` with Metal support.
-   - Added `scripts/copy-whisper-runtime.sh`.
-   - Added the Xcode `Copy Whisper Runtime` build phase.
-   - Copies `whisper-cli` and required `libwhisper`/`libggml` dylibs into
-     `Contents/Resources/whisper`.
-   - Rewrites the runtime rpath to load dylibs from the bundled folder.
+   - Builds `Vendor/whisper.cpp/build-apple/whisper.xcframework` with Metal
+     support.
+   - Builds only the `macos-arm64` XCFramework slice for Apple Silicon and
+     macOS 26.0 or later.
+   - Links and embeds `whisper.xcframework` in the app target.
+   - Removed the `Copy Whisper Runtime` build phase and CLI/dylib resource
+     bundling.
    - Keeps `Vendor/whisper.cpp/` out of git.
 
-4. Prove file-level transcription end to end.
+4. Prove native transcription end to end.
    - Installed `ggml-tiny.en.bin` locally for the first smoke test.
    - Used `Vendor/whisper.cpp/samples/jfk.wav` as the tiny WAV fixture.
-   - Ran `whisper-cli` against the local model and WAV file.
-   - Confirmed the pinned CLI writes `--output-txt` to an `audio.wav.txt`
-     sidecar file.
-   - Adjusted `WhisperCppTranscriber` to remove stale sidecars before launch and
-     prefer sidecar transcript output, with stdout retained as a fallback.
+   - The native runtime now consumes in-memory 16 kHz mono float samples instead
+     of shelling out to a file-level CLI.
 
 5. Add `WhisperSpeechRecognitionEngine`.
    - Conform to `SpeechRecognitionEngine`.
    - Request microphone permission.
    - Capture audio with `AVAudioEngine`.
-   - Write session audio to a temporary 16-bit WAV file.
-   - Invoke `WhisperCppTranscriber`.
-   - Emit a final `SpeechRecognitionResult`.
-   - Keep partial/streaming transcription for a later iteration.
+   - Convert microphone buffers to 16 kHz mono float PCM in memory.
+   - Feed a rolling sample window to the native `WhisperCppTranscriber`.
+   - Emit partial `SpeechRecognitionResult` values while recording.
+   - Emit a final `SpeechRecognitionResult` on stop.
 
 6. Add a speech engine factory.
    - Keep `SpeechFollowController` independent from concrete runtimes.
    - Route Apple models to `AppleSpeechRecognitionEngine`.
    - Route Whisper models to `WhisperSpeechRecognitionEngine`.
-   - Keep Apple Speech as fallback if the Whisper runtime or model is missing.
+   - Keep Apple Speech as fallback if the Whisper model is missing.
 
 7. Add `SpeechModelCatalog`.
    - Built-in Apple Speech descriptor.

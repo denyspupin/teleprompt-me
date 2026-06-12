@@ -4,9 +4,8 @@ import Foundation
 final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
     private let modelURL: URL
     private let audioEngine = AVAudioEngine()
-    private var audioFile: AVAudioFile?
+    private let sampleBuffer: WhisperAudioSampleBuffer
     private var audioConverter: AVAudioConverter?
-    private var temporaryAudioURL: URL?
     private var transcriptionTask: Task<Void, Never>?
     private var continuation: AsyncStream<SpeechRecognitionResult>.Continuation?
     private(set) var failureMessage: String?
@@ -20,17 +19,22 @@ final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
 
     init(modelURL: URL) {
         self.modelURL = modelURL
+        sampleBuffer = WhisperAudioSampleBuffer(sampleRate: Self.sampleRate)
     }
 
     func start(localeIdentifier: String) async throws {
         stop()
         failureMessage = nil
+        sampleBuffer.removeAll()
 
         guard await requestMicrophoneAuthorization() else {
             throw SpeechRecognitionError.authorizationDenied
         }
 
-        guard let transcriber = WhisperCppTranscriber(bundledModelURL: modelURL) else {
+        let transcriber: WhisperCppTranscriber
+        do {
+            transcriber = try WhisperCppTranscriber(modelURL: modelURL)
+        } catch {
             throw SpeechRecognitionError.localModelUnavailable(modelURL.lastPathComponent)
         }
 
@@ -40,40 +44,21 @@ final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
             throw SpeechRecognitionError.microphoneUnavailable
         }
 
-        let outputFormat = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
-            sampleRate: 16_000,
+        guard let outputFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: Self.sampleRate,
             channels: 1,
-            interleaved: true
-        )
-        guard let outputFormat else {
+            interleaved: false
+        ),
+        let converter = AVAudioConverter(from: inputFormat, to: outputFormat) else {
             throw SpeechRecognitionError.microphoneUnavailable
         }
 
-        let audioURL = Self.temporaryAudioURL()
-        let audioFile: AVAudioFile
-        do {
-            audioFile = try AVAudioFile(
-                forWriting: audioURL,
-                settings: outputFormat.settings,
-                commonFormat: outputFormat.commonFormat,
-                interleaved: outputFormat.isInterleaved
-            )
-        } catch {
-            throw SpeechRecognitionError.microphoneUnavailable
-        }
-
-        guard let converter = AVAudioConverter(from: inputFormat, to: outputFormat) else {
-            throw SpeechRecognitionError.microphoneUnavailable
-        }
-
-        self.audioFile = audioFile
         audioConverter = converter
-        temporaryAudioURL = audioURL
 
         inputNode.removeTap(onBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 2_048, format: inputFormat) { [weak self] buffer, _ in
-            self?.write(buffer, to: outputFormat)
+            self?.appendConvertedSamples(from: buffer, to: outputFormat)
         }
 
         audioEngine.prepare()
@@ -82,37 +67,15 @@ final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
             isRecording = true
         } catch {
             inputNode.removeTap(onBus: 0)
-            clearAudioResources()
+            audioConverter = nil
             throw SpeechRecognitionError.microphoneUnavailable
         }
 
         transcriptionTask = Task { [weak self] in
-            guard let self else { return }
-
-            while !Task.isCancelled && self.isRecording {
-                try? await Task.sleep(for: .milliseconds(100))
-            }
-
-            guard !Task.isCancelled else { return }
-
-            do {
-                let result = try await transcriber.transcribe(
-                    audioURL: audioURL,
-                    options: WhisperCppTranscriptionOptions(languageIdentifier: localeIdentifier)
-                )
-                self.continuation?.yield(
-                    SpeechRecognitionResult(
-                        transcript: result.transcript,
-                        isFinal: true
-                    )
-                )
-            } catch {
-                self.failureMessage = error.localizedDescription
-                NSLog("TelepromptMe Whisper recognition failed: \(error.localizedDescription)")
-            }
-
-            self.continuation?.finish()
-            self.removeTemporaryAudioFile(at: audioURL)
+            await self?.runTranscriptionLoop(
+                transcriber: transcriber,
+                localeIdentifier: localeIdentifier
+            )
         }
     }
 
@@ -120,8 +83,77 @@ final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
         stopAudioCapture()
     }
 
-    private func write(_ buffer: AVAudioPCMBuffer, to outputFormat: AVAudioFormat) {
-        guard let audioFile, let audioConverter else { return }
+    private func runTranscriptionLoop(
+        transcriber: WhisperCppTranscriber,
+        localeIdentifier: String
+    ) async {
+        var lastPartialTranscript = ""
+        let options = WhisperCppTranscriptionOptions(languageIdentifier: localeIdentifier)
+
+        while !Task.isCancelled && isRecording {
+            try? await Task.sleep(for: .milliseconds(Self.partialTranscriptionIntervalMilliseconds))
+            guard !Task.isCancelled, isRecording else {
+                break
+            }
+
+            let samples = sampleBuffer.recentSamples(duration: Self.partialTranscriptionWindowSeconds)
+            guard samples.count >= Self.minimumPartialSampleCount else {
+                continue
+            }
+
+            do {
+                let result = try await transcriber.transcribe(samples: samples, options: options)
+                guard result.transcript != lastPartialTranscript else {
+                    continue
+                }
+
+                lastPartialTranscript = result.transcript
+                continuation?.yield(
+                    SpeechRecognitionResult(
+                        transcript: result.transcript,
+                        isFinal: false
+                    )
+                )
+            } catch WhisperCppTranscriberError.emptyTranscript {
+                continue
+            } catch {
+                failureMessage = error.localizedDescription
+                NSLog("TelepromptMe Whisper partial recognition failed: \(error.localizedDescription)")
+            }
+        }
+
+        guard !Task.isCancelled else { return }
+
+        do {
+            let samples = sampleBuffer.allSamples()
+            guard !samples.isEmpty else {
+                continuation?.finish()
+                return
+            }
+
+            let result = try await transcriber.transcribe(
+                samples: samples,
+                options: WhisperCppTranscriptionOptions(
+                    languageIdentifier: localeIdentifier,
+                    runsSingleSegment: false
+                )
+            )
+            continuation?.yield(
+                SpeechRecognitionResult(
+                    transcript: result.transcript,
+                    isFinal: true
+                )
+            )
+        } catch {
+            failureMessage = error.localizedDescription
+            NSLog("TelepromptMe Whisper recognition failed: \(error.localizedDescription)")
+        }
+
+        continuation?.finish()
+    }
+
+    private func appendConvertedSamples(from buffer: AVAudioPCMBuffer, to outputFormat: AVAudioFormat) {
+        guard let audioConverter else { return }
 
         let frameCapacity = AVAudioFrameCount(
             Double(buffer.frameLength) * outputFormat.sampleRate / buffer.format.sampleRate
@@ -153,11 +185,17 @@ final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
             return
         }
 
-        do {
-            try audioFile.write(from: convertedBuffer)
-        } catch {
-            failureMessage = error.localizedDescription
+        guard let channelData = convertedBuffer.floatChannelData?[0] else {
+            return
         }
+
+        let samples = Array(
+            UnsafeBufferPointer(
+                start: channelData,
+                count: Int(convertedBuffer.frameLength)
+            )
+        )
+        sampleBuffer.append(samples)
     }
 
     private func stopAudioCapture() {
@@ -167,18 +205,7 @@ final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
         }
 
         isRecording = false
-        clearAudioResources()
-    }
-
-    private func clearAudioResources() {
-        audioFile = nil
         audioConverter = nil
-        temporaryAudioURL = nil
-    }
-
-    private func removeTemporaryAudioFile(at audioURL: URL) {
-        try? FileManager.default.removeItem(at: audioURL)
-        try? FileManager.default.removeItem(at: URL(fileURLWithPath: audioURL.path + ".txt"))
     }
 
     private func requestMicrophoneAuthorization() async -> Bool {
@@ -194,9 +221,43 @@ final class WhisperSpeechRecognitionEngine: SpeechRecognitionEngine {
         }
     }
 
-    private static func temporaryAudioURL() -> URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent("telepromptme-whisper-\(UUID().uuidString)")
-            .appendingPathExtension("wav")
+    private static let sampleRate: Double = 16_000
+    private static let partialTranscriptionIntervalMilliseconds = 1_500
+    private static let partialTranscriptionWindowSeconds: TimeInterval = 6
+    private static let minimumPartialSampleCount = Int(sampleRate * 1.5)
+}
+
+final class WhisperAudioSampleBuffer {
+    private let lock = NSLock()
+    private let sampleRate: Double
+    private var samples: [Float] = []
+
+    init(sampleRate: Double) {
+        self.sampleRate = sampleRate
+    }
+
+    func append(_ newSamples: [Float]) {
+        lock.withLock {
+            samples.append(contentsOf: newSamples)
+        }
+    }
+
+    func allSamples() -> [Float] {
+        lock.withLock {
+            samples
+        }
+    }
+
+    func recentSamples(duration: TimeInterval) -> [Float] {
+        lock.withLock {
+            let sampleCount = min(samples.count, Int(sampleRate * duration))
+            return Array(samples.suffix(sampleCount))
+        }
+    }
+
+    func removeAll() {
+        lock.withLock {
+            samples.removeAll(keepingCapacity: true)
+        }
     }
 }

@@ -20,11 +20,75 @@ struct SpeechModelDescriptor: Codable, Identifiable, Equatable {
     var subtitle: String
     var repositoryID: String?
     var primaryModelFileName: String?
+    var auxiliaryModelFileNames: [String]
     var checksumSHA256: String?
     var estimatedByteSize: Int64?
     var supportedLanguageIdentifiers: [String]
     var isCustom: Bool
     var isRecommended: Bool
+
+    init(
+        id: String,
+        runtime: SpeechRecognitionRuntime,
+        architecture: SpeechRecognitionArchitecture,
+        title: String,
+        subtitle: String,
+        repositoryID: String?,
+        primaryModelFileName: String?,
+        auxiliaryModelFileNames: [String] = [],
+        checksumSHA256: String?,
+        estimatedByteSize: Int64?,
+        supportedLanguageIdentifiers: [String],
+        isCustom: Bool,
+        isRecommended: Bool
+    ) {
+        self.id = id
+        self.runtime = runtime
+        self.architecture = architecture
+        self.title = title
+        self.subtitle = subtitle
+        self.repositoryID = repositoryID
+        self.primaryModelFileName = primaryModelFileName
+        self.auxiliaryModelFileNames = auxiliaryModelFileNames
+        self.checksumSHA256 = checksumSHA256
+        self.estimatedByteSize = estimatedByteSize
+        self.supportedLanguageIdentifiers = supportedLanguageIdentifiers
+        self.isCustom = isCustom
+        self.isRecommended = isRecommended
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case runtime
+        case architecture
+        case title
+        case subtitle
+        case repositoryID
+        case primaryModelFileName
+        case auxiliaryModelFileNames
+        case checksumSHA256
+        case estimatedByteSize
+        case supportedLanguageIdentifiers
+        case isCustom
+        case isRecommended
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        runtime = try container.decode(SpeechRecognitionRuntime.self, forKey: .runtime)
+        architecture = try container.decode(SpeechRecognitionArchitecture.self, forKey: .architecture)
+        title = try container.decode(String.self, forKey: .title)
+        subtitle = try container.decode(String.self, forKey: .subtitle)
+        repositoryID = try container.decodeIfPresent(String.self, forKey: .repositoryID)
+        primaryModelFileName = try container.decodeIfPresent(String.self, forKey: .primaryModelFileName)
+        auxiliaryModelFileNames = try container.decodeIfPresent([String].self, forKey: .auxiliaryModelFileNames) ?? []
+        checksumSHA256 = try container.decodeIfPresent(String.self, forKey: .checksumSHA256)
+        estimatedByteSize = try container.decodeIfPresent(Int64.self, forKey: .estimatedByteSize)
+        supportedLanguageIdentifiers = try container.decode([String].self, forKey: .supportedLanguageIdentifiers)
+        isCustom = try container.decode(Bool.self, forKey: .isCustom)
+        isRecommended = try container.decode(Bool.self, forKey: .isRecommended)
+    }
 
     var isBuiltIn: Bool {
         runtime == .appleSpeech
@@ -74,7 +138,7 @@ enum SpeechModelCatalog {
     }
 
     static var descriptors: [SpeechModelDescriptor] {
-        builtInDescriptors + downloadableDescriptors + customDescriptors()
+        builtInDescriptors + downloadableDescriptors + installedDescriptors()
     }
 
     static func descriptor(for id: String) -> SpeechModelDescriptor? {
@@ -94,7 +158,7 @@ enum SpeechModelCatalog {
         return descriptor.id
     }
 
-    static func customDescriptors() -> [SpeechModelDescriptor] {
+    static func installedDescriptors() -> [SpeechModelDescriptor] {
         let fileManager = FileManager.default
         guard let modelDirectories = try? fileManager.contentsOfDirectory(
             at: SpeechModelStorage.modelsDirectoryURL,
@@ -104,10 +168,6 @@ enum SpeechModelCatalog {
         }
 
         return modelDirectories.compactMap { directoryURL in
-            guard directoryURL.lastPathComponent.hasPrefix("custom-") else {
-                return nil
-            }
-
             let manifestURL = directoryURL.appendingPathComponent(SpeechModelStorage.manifestFileName)
             guard let data = try? Data(contentsOf: manifestURL),
                   let descriptor = try? JSONDecoder().decode(SpeechModelDescriptor.self, from: data) else {
@@ -116,6 +176,10 @@ enum SpeechModelCatalog {
 
             return descriptor
         }
+    }
+
+    static func customDescriptors() -> [SpeechModelDescriptor] {
+        installedDescriptors().filter(\.isCustom)
     }
 
     private static func isAvailableForSelection(_ descriptor: SpeechModelDescriptor) -> Bool {
@@ -189,6 +253,7 @@ enum SpeechModelCatalog {
             subtitle: whisperCppSubtitle(for: fileName),
             repositoryID: whisperCppRepositoryID,
             primaryModelFileName: fileName,
+            auxiliaryModelFileNames: whisperCppCoreMLArchiveFileNames(for: fileName),
             checksumSHA256: nil,
             estimatedByteSize: estimatedByteSize(for: fileName),
             supportedLanguageIdentifiers: supportedLanguageIdentifiers(for: fileName),
@@ -235,6 +300,20 @@ enum SpeechModelCatalog {
 
     private static func supportedLanguageIdentifiers(for fileName: String) -> [String] {
         fileName.contains(".en") ? ["en_US", "en_GB"] : []
+    }
+
+    static func whisperCppCoreMLArchiveFileNames(for fileName: String) -> [String] {
+        guard isWhisperCppModelFile(fileName) else {
+            return []
+        }
+
+        let baseName = fileName.replacingOccurrences(of: ".bin", with: "")
+        let encoderBaseName = baseName.replacingOccurrences(
+            of: #"-q[0-9]+_[0-9]+$"#,
+            with: "",
+            options: .regularExpression
+        )
+        return ["\(encoderBaseName)-encoder.mlmodelc.zip"]
     }
 
     private static func estimatedByteSize(for fileName: String) -> Int64? {

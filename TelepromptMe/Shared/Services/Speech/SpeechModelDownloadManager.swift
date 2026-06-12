@@ -40,11 +40,11 @@ final class SpeechModelDownloadManager {
     }
 
     func isReady(_ modelID: String) -> Bool {
-        SpeechModelCatalog.resolvedModelID(for: modelID) == modelID
+        descriptor(for: modelID).map(isUsable) ?? false
     }
 
     func isUsable(_ modelID: String) -> Bool {
-        guard let descriptor = SpeechModelCatalog.descriptor(for: modelID) else {
+        guard let descriptor = descriptor(for: modelID) else {
             return false
         }
 
@@ -264,6 +264,10 @@ final class SpeechModelDownloadManager {
             SpeechModelCatalog.customDescriptors()
     }
 
+    func descriptor(for modelID: String) -> SpeechModelDescriptor? {
+        availableModels.first { $0.id == modelID } ?? SpeechModelCatalog.descriptor(for: modelID)
+    }
+
     func directoryURL(for model: SpeechRecognitionEngineID) -> URL {
         Self.directoryURL(for: model)
     }
@@ -315,22 +319,42 @@ final class SpeechModelDownloadManager {
             throw SpeechModelDownloadError.modelFileNotFound(primaryModelFileName, repositoryID)
         }
 
-        let sourceURL = try Self.resolveURL(repositoryID: repositoryID, filePath: modelFile.path)
-        let totalBytes = modelFile.size ?? descriptor.estimatedByteSize ?? 0
+        let optionalFiles = descriptor.auxiliaryModelFileNames.compactMap { fileName in
+            files.first { $0.path == fileName }
+        }
+        let filesToDownload = [modelFile] + optionalFiles
+        let totalBytes = filesToDownload.reduce(Int64(0)) { partialResult, file in
+            partialResult + (file.size ?? (file.path == modelFile.path ? descriptor.estimatedByteSize : nil) ?? 0)
+        }
+        var completedBytes: Int64 = 0
+        var completedFileCount = 0
+        var downloadedExpectedBytes: Int64?
 
-        try Task.checkCancellation()
-        let (_, expectedBytes) = try await downloadFile(
-            from: sourceURL,
-            to: SpeechModelStorage.directoryURL(forModelID: descriptor.id).appendingPathComponent(modelFile.path),
-            modelID: descriptor.id,
-            filePath: modelFile.path,
-            completedBytes: 0,
-            totalBytes: totalBytes,
-            completedFileCount: 0,
-            totalFileCount: 1
-        )
+        for file in filesToDownload {
+            try Task.checkCancellation()
+            let sourceURL = try Self.resolveURL(repositoryID: repositoryID, filePath: file.path)
+            let destinationURL = SpeechModelStorage.directoryURL(forModelID: descriptor.id)
+                .appendingPathComponent(file.path)
+            let (downloadedBytes, expectedBytes) = try await downloadFile(
+                from: sourceURL,
+                to: destinationURL,
+                modelID: descriptor.id,
+                filePath: file.path,
+                completedBytes: completedBytes,
+                totalBytes: totalBytes,
+                completedFileCount: completedFileCount,
+                totalFileCount: filesToDownload.count
+            )
+            completedBytes += max(downloadedBytes, file.size ?? expectedBytes ?? 0)
+            completedFileCount += 1
+            downloadedExpectedBytes = expectedBytes
 
-        if totalBytes > 0 || expectedBytes != nil {
+            if file.path.hasSuffix(".mlmodelc.zip") {
+                try Self.expandCoreMLArchive(at: destinationURL)
+            }
+        }
+
+        if totalBytes > 0 || downloadedExpectedBytes != nil {
             states[descriptor.id] = .downloading(progress: 1)
         }
     }
@@ -558,6 +582,46 @@ final class SpeechModelDownloadManager {
         return url
     }
 
+    static func expandCoreMLArchive(at archiveURL: URL) throws {
+        let fileManager = FileManager.default
+        let modelDirectoryURL = archiveURL.deletingLastPathComponent()
+        let compiledModelURL = modelDirectoryURL
+            .appendingPathComponent(archiveURL.deletingPathExtension().lastPathComponent, isDirectory: true)
+        let temporaryDirectoryURL = modelDirectoryURL
+            .appendingPathComponent(".\(UUID().uuidString)", isDirectory: true)
+
+        try fileManager.createDirectory(at: temporaryDirectoryURL, withIntermediateDirectories: true)
+        defer {
+            try? fileManager.removeItem(at: temporaryDirectoryURL)
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        process.arguments = ["-x", "-k", archiveURL.path, temporaryDirectoryURL.path]
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            throw SpeechModelDownloadError.coreMLArchiveExpansionFailed(archiveURL.lastPathComponent)
+        }
+
+        guard process.terminationStatus == 0 else {
+            throw SpeechModelDownloadError.coreMLArchiveExpansionFailed(archiveURL.lastPathComponent)
+        }
+
+        let expandedURL = temporaryDirectoryURL.appendingPathComponent(compiledModelURL.lastPathComponent)
+        guard fileManager.fileExists(atPath: expandedURL.path) else {
+            throw SpeechModelDownloadError.coreMLArchiveExpansionFailed(archiveURL.lastPathComponent)
+        }
+
+        if fileManager.fileExists(atPath: compiledModelURL.path) {
+            try fileManager.removeItem(at: compiledModelURL)
+        }
+        try fileManager.moveItem(at: expandedURL, to: compiledModelURL)
+        try? fileManager.removeItem(at: archiveURL)
+    }
+
     static func byteSize(from response: HTTPURLResponse) -> Int64? {
         if let linkedSize = headerValue("X-Linked-Size", in: response),
            let linkedByteSize = Int64(linkedSize) {
@@ -616,6 +680,7 @@ private enum SpeechModelDownloadError: LocalizedError {
     case modelFileNotFound(String, String)
     case downloadFailed(String)
     case checksumMismatch(String)
+    case coreMLArchiveExpansionFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -629,6 +694,8 @@ private enum SpeechModelDownloadError: LocalizedError {
             return "Could not download \(filePath)."
         case .checksumMismatch(let modelName):
             return "\(modelName) did not match its expected checksum."
+        case .coreMLArchiveExpansionFailed(let fileName):
+            return "Could not expand the Core ML model archive \(fileName)."
         }
     }
 }

@@ -25,24 +25,22 @@ final class SpeechRecognitionEngineFactoryTests: XCTestCase {
     func testAppleModelRoutesToAppleSpeechEngine() {
         let engine = SpeechRecognitionEngineFactory.makeEngine(
             for: SpeechRecognitionEngineID.appleBuiltIn.rawValue,
-            fileExists: { _ in true },
-            bundledExecutableURL: URL(fileURLWithPath: "/tmp/whisper-cli")
+            fileExists: { _ in true }
         )
 
         XCTAssertTrue(engine is AppleSpeechRecognitionEngine)
     }
 
-    func testWhisperModelFallsBackWhenRuntimeIsMissing() {
+    func testWhisperModelFallsBackWhenModelIsMissing() {
         let engine = SpeechRecognitionEngineFactory.makeEngine(
             for: SpeechRecognitionEngineID.whisperSmall.rawValue,
-            fileExists: { _ in true },
-            bundledExecutableURL: nil
+            fileExists: { _ in false }
         )
 
         XCTAssertTrue(engine is AppleSpeechRecognitionEngine)
     }
 
-    func testWhisperModelRoutesToWhisperEngineWhenModelAndRuntimeExist() throws {
+    func testWhisperModelRoutesToWhisperEngineWhenModelExists() throws {
         let descriptor = SpeechRecognitionEngineID.whisperSmall.descriptor
         let modelDirectory = SpeechModelStorage.directoryURL(forModelID: descriptor.id)
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
@@ -51,8 +49,38 @@ final class SpeechRecognitionEngineFactoryTests: XCTestCase {
 
         let engine = SpeechRecognitionEngineFactory.makeEngine(
             for: descriptor.id,
-            fileExists: { $0 == modelURL.path },
-            bundledExecutableURL: URL(fileURLWithPath: "/tmp/whisper-cli")
+            fileExists: { $0 == modelURL.path }
+        )
+
+        XCTAssertTrue(engine is WhisperSpeechRecognitionEngine)
+    }
+
+    func testInstalledManifestWhisperModelRoutesToWhisperEngineWhenModelExists() throws {
+        let descriptor = SpeechModelDescriptor(
+            id: "whisper-runtime-dynamic",
+            runtime: .whisperCpp,
+            architecture: .whisper,
+            title: "Dynamic Whisper",
+            subtitle: "Downloaded whisper.cpp model.",
+            repositoryID: "example/whisper",
+            primaryModelFileName: "ggml-dynamic.bin",
+            checksumSHA256: nil,
+            estimatedByteSize: nil,
+            supportedLanguageIdentifiers: [],
+            isCustom: false,
+            isRecommended: false
+        )
+        let modelDirectory = SpeechModelStorage.directoryURL(forModelID: descriptor.id)
+        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        let modelURL = modelDirectory.appendingPathComponent(descriptor.primaryModelFileName!)
+        try Data("model".utf8).write(to: modelURL)
+        try JSONEncoder().encode(descriptor).write(
+            to: modelDirectory.appendingPathComponent(SpeechModelStorage.manifestFileName)
+        )
+
+        let engine = SpeechRecognitionEngineFactory.makeEngine(
+            for: descriptor.id,
+            fileExists: { $0 == modelURL.path }
         )
 
         XCTAssertTrue(engine is WhisperSpeechRecognitionEngine)

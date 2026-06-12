@@ -384,7 +384,7 @@ struct AppSettingsSnapshot: Equatable {
         showMenuBarItem = settings.showMenuBarItem
         keepOverlayCentered = settings.keepOverlayCentered
         isVoiceFollowEnabledByDefault = settings.isVoiceFollowEnabledByDefault
-        selectedSpeechEngineID = settings.resolvedSpeechModelID
+        selectedSpeechEngineID = settings.selectedSpeechEngineID
         selectedSpeechLocaleIdentifier = settings.selectedSpeechLocaleIdentifier
         speechFollowSensitivity = settings.speechFollowSensitivity
         toggleOverlayShortcut = settings.toggleOverlayShortcut
