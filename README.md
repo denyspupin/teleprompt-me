@@ -1,4 +1,8 @@
-# TelepromptMe
+<p align="center">
+  <img src="docs/images/telepromptme-icon.png" width="160" alt="TelepromptMe app icon">
+</p>
+
+<h1 align="center">TelepromptMe</h1>
 
 TelepromptMe is a native macOS teleprompter built for people who speak to a camera. It keeps a script in a compact floating overlay near the camera and can follow along as you speak using on-device speech recognition.
 
@@ -72,4 +76,3 @@ TelepromptMe is currently a personal, in-progress project, but focused bug repor
 ## License
 
 No open-source license has been selected yet. The source is public for transparency and learning, but no permission to copy, modify, or redistribute it is granted at this time.
-
