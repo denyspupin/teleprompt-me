@@ -22,5 +22,9 @@ Package.resolved
 *.pem
 *.mobileprovision
 
+# Private planning documents
+docs/*-plan.md
+docs/plans/
+
 # Vendored local speech runtime build output
 Vendor/whisper.cpp/
