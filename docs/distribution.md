@@ -13,7 +13,7 @@ This project is set up to ship as a standalone macOS app outside the Mac App Sto
 
 ## One-time setup in Xcode
 
-1. Open [TelepromptMe.xcodeproj](/Users/denyspupin/Dev/projects/TelepromptMe/TelepromptMe.xcodeproj).
+1. Open `TelepromptMe.xcodeproj` from the repository root.
 2. Select the `TelepromptMe` target.
 3. In `Signing & Capabilities`, choose your Apple Developer team.
 4. Keep `Automatically manage signing` enabled.

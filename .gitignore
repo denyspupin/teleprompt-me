@@ -1,8 +1,11 @@
 .DS_Store
+*.swp
+*.orig
 
 # Xcode user data
 xcuserdata/
 *.xcuserstate
+*.xccheckout
 
 # Xcode build products
 build/
@@ -11,6 +14,13 @@ DerivedData/
 # Swift Package Manager
 .build/
 Package.resolved
+
+# Local configuration and credentials
+.env
+.env.*
+*.p12
+*.pem
+*.mobileprovision
 
 # Vendored local speech runtime build output
 Vendor/whisper.cpp/

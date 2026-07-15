@@ -49,7 +49,7 @@ This document describes the functionality currently implemented in TelepromptMe.
 - Runs Whisper transcription in process through the whisper.cpp C API.
 - Emits partial and final recognition results while listening.
 - Maintains a runtime-oriented speech model catalog.
-- Lists built-in, downloadable, and imported speech model descriptors.
+- Lists built-in and downloadable speech model descriptors.
 - Refreshes downloadable whisper.cpp model metadata from Hugging Face when available.
 - Supports downloading whisper.cpp model files with progress, cancellation, partial-file cleanup, and installation state tracking.
 - Supports deleting installed downloadable models.
@@ -63,7 +63,7 @@ This document describes the functionality currently implemented in TelepromptMe.
 - Configures Dock icon, menu bar item, and default overlay positioning preferences.
 - Configures overlay typography and opacity.
 - Configures speech recognition engine, language, automatic voice follow, and matching sensitivity.
-- Shows available speech models with installed, downloading, failed, custom, and recommended states.
+- Shows available speech models with installed, downloading, failed, and recommended states.
 - Allows model download, cancellation, deletion, and selection.
 - Allows global keyboard shortcuts to be edited or cleared.
 
@@ -84,3 +84,10 @@ This document describes the functionality currently implemented in TelepromptMe.
 - Covers speech model catalog behavior.
 - Covers speech recognition engine factory routing.
 - Covers Whisper transcriber behavior.
+
+## Known Gaps
+
+- There is no prebuilt public release or automated release pipeline yet.
+- A fresh clone needs the generated whisper.cpp XCFramework before it can build.
+- Speech-follow accuracy and responsiveness are still being tuned.
+- First-run onboarding, accessibility review, and broader real-world testing are still in progress.
