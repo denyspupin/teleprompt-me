@@ -1,0 +1,713 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5005C6172FC9CFC900EE89B6 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5005C6162FC9CFC900EE89B6 /* AppIcon.icon */; };
+		A00000000000000000000001 /* TelepromptMeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* TelepromptMeApp.swift */; };
+		A00000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* AppDelegate.swift */; };
+		A00000000000000000000003 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* AppState.swift */; };
+		A00000000000000000000004 /* TelepromptMeCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000014 /* TelepromptMeCommands.swift */; };
+		A00000000000000000000005 /* ScriptDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000015 /* ScriptDocument.swift */; };
+		A00000000000000000000006 /* ScriptCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000016 /* ScriptCollection.swift */; };
+		A00000000000000000000007 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000017 /* AppSettings.swift */; };
+		A00000000000000000000008 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000018 /* PlaybackController.swift */; };
+		A00000000000000000000009 /* OverlayWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000019 /* OverlayWindowManager.swift */; };
+		A0000000000000000000000A /* ShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001A /* ShortcutManager.swift */; };
+		A0000000000000000000000B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001B /* LibraryView.swift */; };
+		A0000000000000000000000C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001C /* SettingsView.swift */; };
+		A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001D /* TeleprompterOverlayView.swift */; };
+		A0000000000000000000000F /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001F /* PersistenceController.swift */; };
+		A00000000000000000000080 /* SettingsNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000083 /* SettingsNavigation.swift */; };
+		A00000000000000000000081 /* SettingsControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000084 /* SettingsControls.swift */; };
+		A00000000000000000000082 /* ShortcutEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000085 /* ShortcutEditorSheet.swift */; };
+		A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000088 /* LibraryDocumentCard.swift */; };
+		A00000000000000000000087 /* ScriptFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000089 /* ScriptFormatting.swift */; };
+		A0000000000000000000008A /* ScriptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000008B /* ScriptEditorView.swift */; };
+		A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* SpeechRecognitionModel.swift */; };
+		A000000000000000000000A5 /* SpeechModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A6 /* SpeechModelCatalog.swift */; };
+		A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000092 /* SpeechRecognitionEngine.swift */; };
+		A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */; };
+		A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000094 /* ScriptProgressMatcher.swift */; };
+		A00000000000000000000090 /* SpeechFollowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* SpeechFollowController.swift */; };
+		A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000099 /* SpeechModelDownloadManager.swift */; };
+		A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000009D /* WhisperCppTranscriber.swift */; };
+		A0000000000000000000009F /* WhisperSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */; };
+		A000000000000000000000A1 /* SpeechRecognitionEngineFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */; };
+		A000000000000000000000A3 /* SpeechModelStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A4 /* SpeechModelStorage.swift */; };
+		A000000000000000000000C0 /* whisper.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A000000000000000000000BF /* whisper.xcframework */; };
+		A000000000000000000000C1 /* whisper.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A000000000000000000000BF /* whisper.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A000000000000000000000B1 /* SpeechModelCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000AD /* SpeechModelCatalogTests.swift */; };
+		A000000000000000000000B2 /* SpeechRecognitionEngineFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000AE /* SpeechRecognitionEngineFactoryTests.swift */; };
+		A000000000000000000000B3 /* WhisperCppTranscriberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000AF /* WhisperCppTranscriberTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A000000000000000000000B6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000041 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000040;
+			remoteInfo = TelepromptMe;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A000000000000000000000C2 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A000000000000000000000C1 /* whisper.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		5005C6162FC9CFC900EE89B6 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		A00000000000000000000010 /* TelepromptMe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TelepromptMe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000011 /* TelepromptMeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelepromptMeApp.swift; sourceTree = "<group>"; };
+		A00000000000000000000012 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A00000000000000000000013 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		A00000000000000000000014 /* TelepromptMeCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelepromptMeCommands.swift; sourceTree = "<group>"; };
+		A00000000000000000000015 /* ScriptDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDocument.swift; sourceTree = "<group>"; };
+		A00000000000000000000016 /* ScriptCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCollection.swift; sourceTree = "<group>"; };
+		A00000000000000000000017 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A00000000000000000000018 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
+		A00000000000000000000019 /* OverlayWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowManager.swift; sourceTree = "<group>"; };
+		A0000000000000000000001A /* ShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutManager.swift; sourceTree = "<group>"; };
+		A0000000000000000000001B /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		A0000000000000000000001C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A0000000000000000000001D /* TeleprompterOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleprompterOverlayView.swift; sourceTree = "<group>"; };
+		A0000000000000000000001F /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		A00000000000000000000083 /* SettingsNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsNavigation.swift; sourceTree = "<group>"; };
+		A00000000000000000000084 /* SettingsControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsControls.swift; sourceTree = "<group>"; };
+		A00000000000000000000085 /* ShortcutEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutEditorSheet.swift; sourceTree = "<group>"; };
+		A00000000000000000000088 /* LibraryDocumentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDocumentCard.swift; sourceTree = "<group>"; };
+		A00000000000000000000089 /* ScriptFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptFormatting.swift; sourceTree = "<group>"; };
+		A0000000000000000000008B /* ScriptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEditorView.swift; sourceTree = "<group>"; };
+		A00000000000000000000091 /* SpeechRecognitionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionModel.swift; sourceTree = "<group>"; };
+		A000000000000000000000A6 /* SpeechModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelCatalog.swift; sourceTree = "<group>"; };
+		A00000000000000000000092 /* SpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A00000000000000000000094 /* ScriptProgressMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptProgressMatcher.swift; sourceTree = "<group>"; };
+		A00000000000000000000095 /* SpeechFollowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechFollowController.swift; sourceTree = "<group>"; };
+		A00000000000000000000099 /* SpeechModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelDownloadManager.swift; sourceTree = "<group>"; };
+		A0000000000000000000009D /* WhisperCppTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCppTranscriber.swift; sourceTree = "<group>"; };
+		A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngineFactory.swift; sourceTree = "<group>"; };
+		A000000000000000000000A4 /* SpeechModelStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelStorage.swift; sourceTree = "<group>"; };
+		A00000000000000000000097 /* TelepromptMe.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TelepromptMe.entitlements; sourceTree = "<group>"; };
+		A000000000000000000000BF /* whisper.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/whisper.cpp/build-apple/whisper.xcframework; sourceTree = SOURCE_ROOT; };
+		A000000000000000000000AC /* TelepromptMeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TelepromptMeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A000000000000000000000AD /* SpeechModelCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelCatalogTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000AE /* SpeechRecognitionEngineFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngineFactoryTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000AF /* WhisperCppTranscriberTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCppTranscriberTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A00000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A000000000000000000000C0 /* whisper.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A000000000000000000000A9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A00000000000000000000030 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000031 /* TelepromptMe */,
+				A000000000000000000000AB /* TelepromptMeTests */,
+				A000000000000000000000BF /* whisper.xcframework */,
+				A00000000000000000000032 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A00000000000000000000031 /* TelepromptMe */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000097 /* TelepromptMe.entitlements */,
+				A00000000000000000000033 /* App */,
+				A00000000000000000000034 /* Core */,
+				A00000000000000000000035 /* Features */,
+				A00000000000000000000036 /* Shared */,
+			);
+			path = TelepromptMe;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000032 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000010 /* TelepromptMe.app */,
+				A000000000000000000000AC /* TelepromptMeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A000000000000000000000AB /* TelepromptMeTests */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000000AD /* SpeechModelCatalogTests.swift */,
+				A000000000000000000000AE /* SpeechRecognitionEngineFactoryTests.swift */,
+				A000000000000000000000AF /* WhisperCppTranscriberTests.swift */,
+			);
+			path = TelepromptMeTests;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000033 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000011 /* TelepromptMeApp.swift */,
+				A00000000000000000000012 /* AppDelegate.swift */,
+				A00000000000000000000013 /* AppState.swift */,
+				A00000000000000000000014 /* TelepromptMeCommands.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000034 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000003D /* Models */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000035 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000003A /* Library */,
+				A0000000000000000000003B /* Settings */,
+				A0000000000000000000003C /* Overlay */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000036 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				5005C6162FC9CFC900EE89B6 /* AppIcon.icon */,
+				A0000000000000000000003E /* Services */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000037 /* Overlay */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000019 /* OverlayWindowManager.swift */,
+			);
+			path = Overlay;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000038 /* Playback */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000018 /* PlaybackController.swift */,
+			);
+			path = Playback;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000039 /* Shortcuts */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001A /* ShortcutManager.swift */,
+			);
+			path = Shortcuts;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000003A /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001B /* LibraryView.swift */,
+				A00000000000000000000088 /* LibraryDocumentCard.swift */,
+				A0000000000000000000008B /* ScriptEditorView.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000003B /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001C /* SettingsView.swift */,
+				A00000000000000000000083 /* SettingsNavigation.swift */,
+				A00000000000000000000084 /* SettingsControls.swift */,
+				A00000000000000000000085 /* ShortcutEditorSheet.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000003C /* Overlay */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001D /* TeleprompterOverlayView.swift */,
+			);
+			path = Overlay;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000003D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000015 /* ScriptDocument.swift */,
+				A00000000000000000000016 /* ScriptCollection.swift */,
+				A00000000000000000000017 /* AppSettings.swift */,
+				A00000000000000000000091 /* SpeechRecognitionModel.swift */,
+				A000000000000000000000A6 /* SpeechModelCatalog.swift */,
+				A00000000000000000000089 /* ScriptFormatting.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000003E /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000037 /* Overlay */,
+				A00000000000000000000038 /* Playback */,
+				A0000000000000000000003F /* Persistence */,
+				A00000000000000000000096 /* Speech */,
+				A00000000000000000000039 /* Shortcuts */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000003F /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000001F /* PersistenceController.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000096 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000092 /* SpeechRecognitionEngine.swift */,
+				A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */,
+				A00000000000000000000094 /* ScriptProgressMatcher.swift */,
+				A00000000000000000000095 /* SpeechFollowController.swift */,
+				A00000000000000000000099 /* SpeechModelDownloadManager.swift */,
+				A0000000000000000000009D /* WhisperCppTranscriber.swift */,
+				A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */,
+				A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */,
+				A000000000000000000000A4 /* SpeechModelStorage.swift */,
+			);
+			path = Speech;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A00000000000000000000040 /* TelepromptMe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000050 /* Build configuration list for PBXNativeTarget "TelepromptMe" */;
+			buildPhases = (
+				A00000000000000000000021 /* Sources */,
+				A00000000000000000000020 /* Frameworks */,
+				A000000000000000000000C2 /* Embed Frameworks */,
+				A00000000000000000000022 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TelepromptMe;
+			productName = TelepromptMe;
+			productReference = A00000000000000000000010 /* TelepromptMe.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A000000000000000000000A7 /* TelepromptMeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A000000000000000000000B8 /* Build configuration list for PBXNativeTarget "TelepromptMeTests" */;
+			buildPhases = (
+				A000000000000000000000A8 /* Sources */,
+				A000000000000000000000A9 /* Frameworks */,
+				A000000000000000000000AA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A000000000000000000000B7 /* PBXTargetDependency */,
+			);
+			name = TelepromptMeTests;
+			productName = TelepromptMeTests;
+			productReference = A000000000000000000000AC /* TelepromptMeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A00000000000000000000041 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					A00000000000000000000040 = {
+						CreatedOnToolsVersion = 26.5;
+					};
+					A000000000000000000000A7 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = A00000000000000000000040;
+					};
+				};
+			};
+			buildConfigurationList = A00000000000000000000051 /* Build configuration list for PBXProject "TelepromptMe" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A00000000000000000000030;
+			productRefGroup = A00000000000000000000032 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A00000000000000000000040 /* TelepromptMe */,
+				A000000000000000000000A7 /* TelepromptMeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A00000000000000000000022 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5005C6172FC9CFC900EE89B6 /* AppIcon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A000000000000000000000AA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A00000000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* TelepromptMeApp.swift in Sources */,
+				A00000000000000000000002 /* AppDelegate.swift in Sources */,
+				A00000000000000000000003 /* AppState.swift in Sources */,
+				A00000000000000000000004 /* TelepromptMeCommands.swift in Sources */,
+				A00000000000000000000005 /* ScriptDocument.swift in Sources */,
+				A00000000000000000000006 /* ScriptCollection.swift in Sources */,
+				A00000000000000000000007 /* AppSettings.swift in Sources */,
+				A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */,
+				A000000000000000000000A5 /* SpeechModelCatalog.swift in Sources */,
+				A00000000000000000000008 /* PlaybackController.swift in Sources */,
+				A00000000000000000000009 /* OverlayWindowManager.swift in Sources */,
+				A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */,
+				A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */,
+				A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */,
+				A00000000000000000000090 /* SpeechFollowController.swift in Sources */,
+				A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */,
+				A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */,
+				A0000000000000000000009F /* WhisperSpeechRecognitionEngine.swift in Sources */,
+				A000000000000000000000A1 /* SpeechRecognitionEngineFactory.swift in Sources */,
+				A000000000000000000000A3 /* SpeechModelStorage.swift in Sources */,
+				A0000000000000000000000A /* ShortcutManager.swift in Sources */,
+				A0000000000000000000000B /* LibraryView.swift in Sources */,
+				A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */,
+				A0000000000000000000008A /* ScriptEditorView.swift in Sources */,
+				A0000000000000000000000C /* SettingsView.swift in Sources */,
+				A00000000000000000000080 /* SettingsNavigation.swift in Sources */,
+				A00000000000000000000081 /* SettingsControls.swift in Sources */,
+				A00000000000000000000082 /* ShortcutEditorSheet.swift in Sources */,
+				A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */,
+				A0000000000000000000000F /* PersistenceController.swift in Sources */,
+				A00000000000000000000087 /* ScriptFormatting.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A000000000000000000000A8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A000000000000000000000B1 /* SpeechModelCatalogTests.swift in Sources */,
+				A000000000000000000000B2 /* SpeechRecognitionEngineFactoryTests.swift in Sources */,
+				A000000000000000000000B3 /* WhisperCppTranscriberTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A000000000000000000000B7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000040 /* TelepromptMe */;
+			targetProxy = A000000000000000000000B6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A00000000000000000000060 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = TelepromptMe/TelepromptMe.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = SWP5BCMH4P;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TelepromptMe/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000061 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_ENTITLEMENTS = TelepromptMe/TelepromptMe.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = SWP5BCMH4P;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TelepromptMe/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A000000000000000000000B4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SWP5BCMH4P;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TelepromptMe.app/Contents/MacOS/TelepromptMe";
+			};
+			name = Debug;
+		};
+		A000000000000000000000B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SWP5BCMH4P;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TelepromptMe.app/Contents/MacOS/TelepromptMe";
+			};
+			name = Release;
+		};
+		A00000000000000000000062 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000063 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A00000000000000000000050 /* Build configuration list for PBXNativeTarget "TelepromptMe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000060 /* Debug */,
+				A00000000000000000000061 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000051 /* Build configuration list for PBXProject "TelepromptMe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000062 /* Debug */,
+				A00000000000000000000063 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A000000000000000000000B8 /* Build configuration list for PBXNativeTarget "TelepromptMeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A000000000000000000000B4 /* Debug */,
+				A000000000000000000000B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = A00000000000000000000041 /* Project object */;
+}
