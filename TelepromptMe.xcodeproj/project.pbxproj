@@ -23,27 +23,12 @@
 		A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001D /* TeleprompterOverlayView.swift */; };
 		A0000000000000000000000F /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000001F /* PersistenceController.swift */; };
 		A00000000000000000000080 /* SettingsNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000083 /* SettingsNavigation.swift */; };
-		A00000000000000000000081 /* SettingsControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000084 /* SettingsControls.swift */; };
-		A00000000000000000000082 /* ShortcutEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000085 /* ShortcutEditorSheet.swift */; };
 		A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000088 /* LibraryDocumentCard.swift */; };
 		A00000000000000000000087 /* ScriptFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000089 /* ScriptFormatting.swift */; };
 		A0000000000000000000008A /* ScriptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000008B /* ScriptEditorView.swift */; };
-		A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* SpeechRecognitionModel.swift */; };
-		A000000000000000000000A5 /* SpeechModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A6 /* SpeechModelCatalog.swift */; };
-		A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000092 /* SpeechRecognitionEngine.swift */; };
-		A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */; };
-		A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000094 /* ScriptProgressMatcher.swift */; };
-		A00000000000000000000090 /* SpeechFollowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* SpeechFollowController.swift */; };
-		A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000099 /* SpeechModelDownloadManager.swift */; };
-		A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000009D /* WhisperCppTranscriber.swift */; };
-		A0000000000000000000009F /* WhisperSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */; };
-		A000000000000000000000A1 /* SpeechRecognitionEngineFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */; };
-		A000000000000000000000A3 /* SpeechModelStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000A4 /* SpeechModelStorage.swift */; };
-		A000000000000000000000C0 /* whisper.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A000000000000000000000BF /* whisper.xcframework */; };
-		A000000000000000000000C1 /* whisper.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A000000000000000000000BF /* whisper.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		A000000000000000000000B1 /* SpeechModelCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000AD /* SpeechModelCatalogTests.swift */; };
-		A000000000000000000000B2 /* SpeechRecognitionEngineFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000AE /* SpeechRecognitionEngineFactoryTests.swift */; };
-		A000000000000000000000B3 /* WhisperCppTranscriberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000AF /* WhisperCppTranscriberTests.swift */; };
+		A000000000000000000000D0 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D1 /* PlaybackControllerTests.swift */; };
+		A000000000000000000000D2 /* ScriptLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D3 /* ScriptLibraryStore.swift */; };
+		A000000000000000000000D4 /* ScriptLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,7 +48,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				A000000000000000000000C1 /* whisper.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -88,28 +72,14 @@
 		A0000000000000000000001D /* TeleprompterOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleprompterOverlayView.swift; sourceTree = "<group>"; };
 		A0000000000000000000001F /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		A00000000000000000000083 /* SettingsNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsNavigation.swift; sourceTree = "<group>"; };
-		A00000000000000000000084 /* SettingsControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsControls.swift; sourceTree = "<group>"; };
-		A00000000000000000000085 /* ShortcutEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutEditorSheet.swift; sourceTree = "<group>"; };
 		A00000000000000000000088 /* LibraryDocumentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryDocumentCard.swift; sourceTree = "<group>"; };
 		A00000000000000000000089 /* ScriptFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptFormatting.swift; sourceTree = "<group>"; };
 		A0000000000000000000008B /* ScriptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptEditorView.swift; sourceTree = "<group>"; };
-		A00000000000000000000091 /* SpeechRecognitionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionModel.swift; sourceTree = "<group>"; };
-		A000000000000000000000A6 /* SpeechModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelCatalog.swift; sourceTree = "<group>"; };
-		A00000000000000000000092 /* SpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngine.swift; sourceTree = "<group>"; };
-		A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
-		A00000000000000000000094 /* ScriptProgressMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptProgressMatcher.swift; sourceTree = "<group>"; };
-		A00000000000000000000095 /* SpeechFollowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechFollowController.swift; sourceTree = "<group>"; };
-		A00000000000000000000099 /* SpeechModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelDownloadManager.swift; sourceTree = "<group>"; };
-		A0000000000000000000009D /* WhisperCppTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCppTranscriber.swift; sourceTree = "<group>"; };
-		A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
-		A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngineFactory.swift; sourceTree = "<group>"; };
-		A000000000000000000000A4 /* SpeechModelStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelStorage.swift; sourceTree = "<group>"; };
 		A00000000000000000000097 /* TelepromptMe.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TelepromptMe.entitlements; sourceTree = "<group>"; };
-		A000000000000000000000BF /* whisper.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/whisper.cpp/build-apple/whisper.xcframework; sourceTree = SOURCE_ROOT; };
 		A000000000000000000000AC /* TelepromptMeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TelepromptMeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A000000000000000000000AD /* SpeechModelCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechModelCatalogTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000AE /* SpeechRecognitionEngineFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngineFactoryTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000AF /* WhisperCppTranscriberTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCppTranscriberTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000D1 /* PlaybackControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackControllerTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000D3 /* ScriptLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLibraryStore.swift; sourceTree = "<group>"; };
+		A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLibraryStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,7 +87,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000C0 /* whisper.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,7 +105,6 @@
 			children = (
 				A00000000000000000000031 /* TelepromptMe */,
 				A000000000000000000000AB /* TelepromptMeTests */,
-				A000000000000000000000BF /* whisper.xcframework */,
 				A00000000000000000000032 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,9 +133,8 @@
 		A000000000000000000000AB /* TelepromptMeTests */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000AD /* SpeechModelCatalogTests.swift */,
-				A000000000000000000000AE /* SpeechRecognitionEngineFactoryTests.swift */,
-				A000000000000000000000AF /* WhisperCppTranscriberTests.swift */,
+				A000000000000000000000D1 /* PlaybackControllerTests.swift */,
+				A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */,
 			);
 			path = TelepromptMeTests;
 			sourceTree = "<group>";
@@ -249,8 +216,6 @@
 			children = (
 				A0000000000000000000001C /* SettingsView.swift */,
 				A00000000000000000000083 /* SettingsNavigation.swift */,
-				A00000000000000000000084 /* SettingsControls.swift */,
-				A00000000000000000000085 /* ShortcutEditorSheet.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -269,8 +234,6 @@
 				A00000000000000000000015 /* ScriptDocument.swift */,
 				A00000000000000000000016 /* ScriptCollection.swift */,
 				A00000000000000000000017 /* AppSettings.swift */,
-				A00000000000000000000091 /* SpeechRecognitionModel.swift */,
-				A000000000000000000000A6 /* SpeechModelCatalog.swift */,
 				A00000000000000000000089 /* ScriptFormatting.swift */,
 			);
 			path = Models;
@@ -282,7 +245,6 @@
 				A00000000000000000000037 /* Overlay */,
 				A00000000000000000000038 /* Playback */,
 				A0000000000000000000003F /* Persistence */,
-				A00000000000000000000096 /* Speech */,
 				A00000000000000000000039 /* Shortcuts */,
 			);
 			path = Services;
@@ -292,24 +254,9 @@
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000001F /* PersistenceController.swift */,
+				A000000000000000000000D3 /* ScriptLibraryStore.swift */,
 			);
 			path = Persistence;
-			sourceTree = "<group>";
-		};
-		A00000000000000000000096 /* Speech */ = {
-			isa = PBXGroup;
-			children = (
-				A00000000000000000000092 /* SpeechRecognitionEngine.swift */,
-				A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */,
-				A00000000000000000000094 /* ScriptProgressMatcher.swift */,
-				A00000000000000000000095 /* SpeechFollowController.swift */,
-				A00000000000000000000099 /* SpeechModelDownloadManager.swift */,
-				A0000000000000000000009D /* WhisperCppTranscriber.swift */,
-				A000000000000000000000A0 /* WhisperSpeechRecognitionEngine.swift */,
-				A000000000000000000000A2 /* SpeechRecognitionEngineFactory.swift */,
-				A000000000000000000000A4 /* SpeechModelStorage.swift */,
-			);
-			path = Speech;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -419,29 +366,17 @@
 				A00000000000000000000005 /* ScriptDocument.swift in Sources */,
 				A00000000000000000000006 /* ScriptCollection.swift in Sources */,
 				A00000000000000000000007 /* AppSettings.swift in Sources */,
-				A0000000000000000000008C /* SpeechRecognitionModel.swift in Sources */,
-				A000000000000000000000A5 /* SpeechModelCatalog.swift in Sources */,
 				A00000000000000000000008 /* PlaybackController.swift in Sources */,
 				A00000000000000000000009 /* OverlayWindowManager.swift in Sources */,
-				A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */,
-				A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */,
-				A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */,
-				A00000000000000000000090 /* SpeechFollowController.swift in Sources */,
-				A00000000000000000000098 /* SpeechModelDownloadManager.swift in Sources */,
-				A0000000000000000000009C /* WhisperCppTranscriber.swift in Sources */,
-				A0000000000000000000009F /* WhisperSpeechRecognitionEngine.swift in Sources */,
-				A000000000000000000000A1 /* SpeechRecognitionEngineFactory.swift in Sources */,
-				A000000000000000000000A3 /* SpeechModelStorage.swift in Sources */,
 				A0000000000000000000000A /* ShortcutManager.swift in Sources */,
 				A0000000000000000000000B /* LibraryView.swift in Sources */,
 				A00000000000000000000086 /* LibraryDocumentCard.swift in Sources */,
 				A0000000000000000000008A /* ScriptEditorView.swift in Sources */,
 				A0000000000000000000000C /* SettingsView.swift in Sources */,
 				A00000000000000000000080 /* SettingsNavigation.swift in Sources */,
-				A00000000000000000000081 /* SettingsControls.swift in Sources */,
-				A00000000000000000000082 /* ShortcutEditorSheet.swift in Sources */,
 				A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */,
 				A0000000000000000000000F /* PersistenceController.swift in Sources */,
+				A000000000000000000000D2 /* ScriptLibraryStore.swift in Sources */,
 				A00000000000000000000087 /* ScriptFormatting.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -450,9 +385,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000B1 /* SpeechModelCatalogTests.swift in Sources */,
-				A000000000000000000000B2 /* SpeechRecognitionEngineFactoryTests.swift in Sources */,
-				A000000000000000000000B3 /* WhisperCppTranscriberTests.swift in Sources */,
+				A000000000000000000000D0 /* PlaybackControllerTests.swift in Sources */,
+				A000000000000000000000D4 /* ScriptLibraryStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -491,7 +425,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -526,7 +460,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.denyspupin.TelepromptMe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

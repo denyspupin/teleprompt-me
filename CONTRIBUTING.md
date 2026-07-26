@@ -6,7 +6,7 @@ Thanks for taking an interest in TelepromptMe. The project is under active devel
 
 - Use an issue to report bugs or propose substantial changes.
 - Keep pull requests small and scoped to one concern.
-- Do not commit generated build output, downloaded speech models, credentials, or Xcode user data.
+- Do not commit generated build output, credentials, or Xcode user data.
 
 ## Development setup
 
@@ -24,4 +24,3 @@ xcodebuild -project TelepromptMe.xcodeproj -scheme TelepromptMe -configuration D
 ```
 
 Please mention any test you could not run and why.
-

@@ -357,22 +357,9 @@ struct AppSettingsSnapshot: Equatable {
     var lineSpacing: Double
     var overlayOpacity: Double
     var playbackSpeedWordsPerMinute: Double
-    var showDockIcon: Bool
-    var showMenuBarItem: Bool
-    var keepOverlayCentered: Bool
-    var isVoiceFollowEnabledByDefault: Bool
-    var selectedSpeechEngineID: String
-    var selectedSpeechLocaleIdentifier: String
-    var speechFollowSensitivity: Double
     var toggleOverlayShortcut: AppShortcut
     var togglePlaybackShortcut: AppShortcut
-    var holdToScrollShortcut: AppShortcut
-    var stopPlaybackShortcut: AppShortcut
     var restartPlaybackShortcut: AppShortcut
-    var increaseSpeedShortcut: AppShortcut
-    var decreaseSpeedShortcut: AppShortcut
-    var stepForwardShortcut: AppShortcut
-    var stepBackwardShortcut: AppShortcut
 
     init(settings: AppSettings) {
         fontName = settings.fontName
@@ -380,22 +367,9 @@ struct AppSettingsSnapshot: Equatable {
         lineSpacing = settings.lineSpacing
         overlayOpacity = settings.overlayOpacity
         playbackSpeedWordsPerMinute = settings.playbackSpeedWordsPerMinute
-        showDockIcon = settings.showDockIcon
-        showMenuBarItem = settings.showMenuBarItem
-        keepOverlayCentered = settings.keepOverlayCentered
-        isVoiceFollowEnabledByDefault = settings.isVoiceFollowEnabledByDefault
-        selectedSpeechEngineID = settings.selectedSpeechEngineID
-        selectedSpeechLocaleIdentifier = settings.selectedSpeechLocaleIdentifier
-        speechFollowSensitivity = settings.speechFollowSensitivity
         toggleOverlayShortcut = settings.toggleOverlayShortcut
         togglePlaybackShortcut = settings.togglePlaybackShortcut
-        holdToScrollShortcut = settings.holdToScrollShortcut
-        stopPlaybackShortcut = settings.stopPlaybackShortcut
         restartPlaybackShortcut = settings.restartPlaybackShortcut
-        increaseSpeedShortcut = settings.increaseSpeedShortcut
-        decreaseSpeedShortcut = settings.decreaseSpeedShortcut
-        stepForwardShortcut = settings.stepForwardShortcut
-        stepBackwardShortcut = settings.stepBackwardShortcut
     }
 
     static let `default` = AppSettingsSnapshot(settings: AppSettings())
@@ -454,7 +428,7 @@ final class AppSettings {
         showMenuBarItem: Bool = true,
         keepOverlayCentered: Bool = true,
         isVoiceFollowEnabledByDefault: Bool = false,
-        selectedSpeechEngineID: String = SpeechRecognitionEngineID.appleBuiltIn.rawValue,
+        selectedSpeechEngineID: String = "apple-built-in",
         selectedSpeechLocaleIdentifier: String = "en_US",
         speechFollowSensitivity: Double = 0.62,
         toggleOverlayShortcutKey: String = AppShortcut.Key.o.rawValue,
@@ -507,14 +481,6 @@ final class AppSettings {
         self.stepForwardShortcutModifiersRawValue = stepForwardShortcutModifiersRawValue
         self.stepBackwardShortcutKey = stepBackwardShortcutKey
         self.stepBackwardShortcutModifiersRawValue = stepBackwardShortcutModifiersRawValue
-    }
-
-    var resolvedSpeechEngineID: SpeechRecognitionEngineID {
-        SpeechRecognitionEngineID(rawValue: resolvedSpeechModelID) ?? .appleBuiltIn
-    }
-
-    var resolvedSpeechModelID: String {
-        SpeechModelCatalog.resolvedModelID(for: selectedSpeechEngineID)
     }
 
     var toggleOverlayShortcut: AppShortcut {

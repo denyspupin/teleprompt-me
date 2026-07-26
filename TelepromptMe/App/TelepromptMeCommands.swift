@@ -13,11 +13,7 @@ struct TelepromptMeCommands: Commands {
                 appState.togglePlayback()
             }
 
-            shortcutMenuButton(
-                title: "Stop",
-                shortcut: appState.settingsSnapshot.stopPlaybackShortcut,
-                isAssigned: appState.isStopPlaybackShortcutAssigned
-            ) {
+            Button("Stop") {
                 appState.stop()
             }
 
@@ -39,37 +35,14 @@ struct TelepromptMeCommands: Commands {
                 appState.presentOverlayIfNeeded()
             }
 
-            shortcutMenuButton(
-                title: "Faster",
-                shortcut: appState.settingsSnapshot.increaseSpeedShortcut,
-                isAssigned: appState.isIncreaseSpeedShortcutAssigned
-            ) {
+            Button("Faster") {
                 appState.playbackController.increaseSpeed()
             }
 
-            shortcutMenuButton(
-                title: "Slower",
-                shortcut: appState.settingsSnapshot.decreaseSpeedShortcut,
-                isAssigned: appState.isDecreaseSpeedShortcutAssigned
-            ) {
+            Button("Slower") {
                 appState.playbackController.decreaseSpeed()
             }
 
-            shortcutMenuButton(
-                title: "Step Forward",
-                shortcut: appState.settingsSnapshot.stepForwardShortcut,
-                isAssigned: appState.isStepForwardShortcutAssigned
-            ) {
-                appState.playbackController.stepForward()
-            }
-
-            shortcutMenuButton(
-                title: "Step Backward",
-                shortcut: appState.settingsSnapshot.stepBackwardShortcut,
-                isAssigned: appState.isStepBackwardShortcutAssigned
-            ) {
-                appState.playbackController.stepBackward()
-            }
         }
     }
 

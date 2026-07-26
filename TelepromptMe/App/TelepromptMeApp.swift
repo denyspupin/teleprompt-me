@@ -9,6 +9,7 @@ struct TelepromptMeApp: App {
 
     init() {
         let state = AppState()
+        state.persistenceWarningMessage = persistenceController.startupErrorMessage
         if let settings = try? persistenceController.loadSettings() {
             state.applySettings(settings)
         }

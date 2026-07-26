@@ -17,6 +17,9 @@ struct LibraryView: View {
     @State private var draftCollectionName = ""
     @State private var isCollectionsCollapsed = false
     @State private var hoveredSidebarSection: String?
+    @State private var pendingDocumentDeletionID: String?
+    @State private var pendingCollectionDeletionID: String?
+    @State private var saveErrorMessage: String?
     @FocusState private var focusedEditor: ScriptEditorFocus?
     @FocusState private var focusedCollectionID: String?
 
@@ -64,6 +67,66 @@ struct LibraryView: View {
             .onChange(of: draftText) { _, _ in
                 autosaveSelectedDocument()
             }
+        }
+        .confirmationDialog(
+            "Delete this script?",
+            isPresented: Binding(
+                get: { pendingDocumentDeletionID != nil },
+                set: { if !$0 { pendingDocumentDeletionID = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Script", role: .destructive) {
+                confirmDocumentDeletion()
+            }
+            Button("Cancel", role: .cancel) {
+                pendingDocumentDeletionID = nil
+            }
+        } message: {
+            Text("This permanently removes the script from your library.")
+        }
+        .confirmationDialog(
+            "Delete this collection?",
+            isPresented: Binding(
+                get: { pendingCollectionDeletionID != nil },
+                set: { if !$0 { pendingCollectionDeletionID = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Collection", role: .destructive) {
+                confirmCollectionDeletion()
+            }
+            Button("Cancel", role: .cancel) {
+                pendingCollectionDeletionID = nil
+            }
+        } message: {
+            Text("Scripts in this collection will remain in All Scripts.")
+        }
+        .alert(
+            "Changes Could Not Be Saved",
+            isPresented: Binding(
+                get: { saveErrorMessage != nil },
+                set: { if !$0 { saveErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(saveErrorMessage ?? "Please try again.")
+        }
+        .alert(
+            "Local Library Is Unavailable",
+            isPresented: Binding(
+                get: { appState.persistenceWarningMessage != nil },
+                set: { if !$0 { appState.persistenceWarningMessage = nil } }
+            )
+        ) {
+            Button("Continue Temporarily", role: .cancel) {}
+        } message: {
+            Text(
+                "TelepromptMe opened a temporary library because its saved library could not be loaded. "
+                + "Changes in this session will not be preserved. "
+                + (appState.persistenceWarningMessage ?? "")
+            )
         }
     }
 
@@ -246,7 +309,7 @@ struct LibraryView: View {
                 isSelected: currentSection == .collection(collection.id),
                 onSelect: { appState.selectedSidebarItem = .collection(collection.id) },
                 onRename: { beginEditing(collection) },
-                onDelete: { delete(collection: collection) }
+                onDelete: { pendingCollectionDeletionID = collection.id }
             )
             .simultaneousGesture(
                 TapGesture(count: 2)
@@ -324,7 +387,7 @@ struct LibraryView: View {
                                 onToggleFavorite: { toggleFavorite(for: document) },
                                 onActivate: { activate(document: document) },
                                 onEdit: { open(document: document) },
-                                onDelete: { delete(document: document) }
+                                onDelete: { pendingDocumentDeletionID = document.id }
                             )
                         }
                     }
@@ -340,7 +403,7 @@ struct LibraryView: View {
             draftText: $draftText,
             focusedEditor: $focusedEditor,
             onBack: { appState.selectedDocumentID = nil },
-            onDelete: { delete(document: document) },
+            onDelete: { pendingDocumentDeletionID = document.id },
             onPresentWritingTools: presentWritingTools
         )
     }
@@ -481,7 +544,7 @@ struct LibraryView: View {
         modelContext.insert(newCollection)
         isCollectionsCollapsed = false
         appState.selectedSidebarItem = .collection(newCollection.id)
-        try? modelContext.save()
+        persistChanges()
     }
 
     private func toggleCollectionsCollapsed() {
@@ -506,7 +569,7 @@ struct LibraryView: View {
         editingCollectionID = nil
         focusedCollectionID = nil
         draftCollectionName = ""
-        try? modelContext.save()
+        persistChanges()
     }
 
     private func cancelCollectionRename() {
@@ -528,8 +591,13 @@ struct LibraryView: View {
             appState.selectedSidebarItem = .allScripts
         }
 
-        modelContext.delete(collection)
-        try? modelContext.save()
+        do {
+            try ScriptLibraryStore(context: modelContext)
+                .deleteCollectionPreservingScripts(collection)
+        } catch {
+            modelContext.rollback()
+            saveErrorMessage = error.localizedDescription
+        }
     }
 
     private func createDocumentAndOpen() {
@@ -551,7 +619,7 @@ struct LibraryView: View {
         appState.selectedDocumentID = newDocument.id
         appState.activateScript(id: newDocument.id, title: newDocument.title, text: newDocument.plainText)
         syncDraftFromSelection()
-        try? modelContext.save()
+        persistChanges()
     }
 
     private func save(document: ScriptDocument) {
@@ -559,7 +627,7 @@ struct LibraryView: View {
         document.title = trimmedTitle.isEmpty ? "Untitled Script" : trimmedTitle
         document.plainText = draftText
         document.updatedAt = .now
-        try? modelContext.save()
+        persistChanges()
         syncDraftFromSelection()
     }
 
@@ -579,13 +647,11 @@ struct LibraryView: View {
             appState.activateScript(id: document.id, title: resolvedTitle, text: draftText)
         }
 
-        try? modelContext.save()
+        persistChanges()
     }
 
     private func delete(document: ScriptDocument) {
         let deletedID = document.id
-        modelContext.delete(document)
-
         if appState.selectedDocumentID == deletedID {
             appState.selectedDocumentID = nil
             draftTitle = ""
@@ -598,7 +664,12 @@ struct LibraryView: View {
             appState.activeScriptText = "Choose a script from the library to show it in the teleprompter overlay."
         }
 
-        try? modelContext.save()
+        do {
+            try ScriptLibraryStore(context: modelContext).delete(document)
+        } catch {
+            modelContext.rollback()
+            saveErrorMessage = error.localizedDescription
+        }
     }
 
     private func open(document: ScriptDocument) {
@@ -612,7 +683,35 @@ struct LibraryView: View {
 
     private func toggleFavorite(for document: ScriptDocument) {
         document.isFavorite.toggle()
-        try? modelContext.save()
+        persistChanges()
+    }
+
+    private func confirmDocumentDeletion() {
+        defer { pendingDocumentDeletionID = nil }
+        guard let id = pendingDocumentDeletionID,
+              let document = documents.first(where: { $0.id == id }) else {
+            return
+        }
+        delete(document: document)
+    }
+
+    private func confirmCollectionDeletion() {
+        defer { pendingCollectionDeletionID = nil }
+        guard let id = pendingCollectionDeletionID,
+              let collection = collections.first(where: { $0.id == id }) else {
+            return
+        }
+        delete(collection: collection)
+    }
+
+    private func persistChanges() {
+        do {
+            try ScriptLibraryStore(context: modelContext).save()
+        } catch {
+            modelContext.rollback()
+            syncDraftFromSelection()
+            saveErrorMessage = error.localizedDescription
+        }
     }
 
     private func presentWritingTools() {
