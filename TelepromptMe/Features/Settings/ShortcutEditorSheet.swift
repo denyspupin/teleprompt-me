@@ -14,9 +14,9 @@ struct ShortcutEditorSheet: View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(command.title)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.title2.weight(.semibold))
                 Text(command.subtitle)
-                    .font(.system(size: 14))
+                    .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
@@ -24,10 +24,10 @@ struct ShortcutEditorSheet: View {
                 shortcut = recordedShortcut
             }
             .frame(height: 112)
-            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
             .overlay {
                 RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.white.opacity(0.10))
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.7))
             }
 
             HStack(spacing: 8) {
@@ -74,7 +74,11 @@ struct ShortcutBadge: View {
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(Color.white.opacity(0.08), in: Capsule())
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5))
+                    }
             }
         }
         .accessibilityElement(children: .ignore)

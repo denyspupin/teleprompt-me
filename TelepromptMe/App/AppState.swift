@@ -8,7 +8,6 @@ final class AppState {
         case allScripts
         case favorites
         case collection(String)
-        case settings
     }
 
     let overlayManager = OverlayWindowManager()

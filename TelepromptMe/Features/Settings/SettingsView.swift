@@ -7,7 +7,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var settings: [AppSettings]
 
-    @Binding var selectedSection: SettingsSection
+    let section: SettingsSection
     @State private var saveErrorMessage: String?
     @State private var editingShortcut: AppShortcutCommand?
 
@@ -26,29 +26,17 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(selectedSection.title)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                    Text(sectionDescription)
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                }
-
-                switch selectedSection {
-                case .general:
-                    generalContent
-                case .appearance:
-                    appearanceContent
-                case .shortcuts:
-                    shortcutsContent
-                }
+        Form {
+            switch section {
+            case .general:
+                generalContent
+            case .appearance:
+                appearanceContent
+            case .shortcuts:
+                shortcutsContent
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(24)
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .formStyle(.grouped)
         .onAppear {
             appState.applySettings(currentSettings)
         }
@@ -75,176 +63,137 @@ struct SettingsView: View {
     }
 
     private var generalContent: some View {
-        VStack(spacing: 18) {
-            settingsCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Autoplay")
-                        .font(.headline)
-
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Reading speed")
-                            Text("Controls how quickly the active script advances.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Slider(
-                            value: binding(for: \.playbackSpeedWordsPerMinute),
-                            in: 60...260,
-                            step: 5
-                        )
-                        .frame(width: 220)
-
-                        Text("\(Int(currentSettings.playbackSpeedWordsPerMinute)) WPM")
-                            .monospacedDigit()
-                            .frame(width: 76, alignment: .trailing)
-                    }
-                }
+        Group {
+            Section {
+                sliderSetting(
+                    title: "Reading speed",
+                    valueText: "\(Int(currentSettings.playbackSpeedWordsPerMinute)) WPM",
+                    value: binding(for: \.playbackSpeedWordsPerMinute),
+                    range: 60...260,
+                    step: 5
+                )
+            } header: {
+                Text("Autoplay")
+            } footer: {
+                Text("Controls how quickly the active script advances.")
             }
 
-            settingsCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Voice follow")
-                        .font(.headline)
-
-                    Text("Uses Apple's on-device speech recognition. Audio is not sent to a third-party provider.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    LabeledContent("Language") {
-                        Picker(
-                            "Language",
-                            selection: binding(for: \.selectedSpeechLocaleIdentifier)
-                        ) {
-                            ForEach(speechLocales, id: \.identifier) { locale in
-                                Text(
-                                    Locale.current.localizedString(forIdentifier: locale.identifier)
-                                        ?? locale.identifier
-                                )
-                                .tag(locale.identifier)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 260)
+            Section {
+                Picker(
+                    "Language",
+                    selection: binding(for: \.selectedSpeechLocaleIdentifier)
+                ) {
+                    ForEach(speechLocales, id: \.identifier) { locale in
+                        Text(
+                            Locale.current.localizedString(forIdentifier: locale.identifier)
+                                ?? locale.identifier
+                        )
+                        .tag(locale.identifier)
                     }
-
-                    Toggle(
-                        "Start voice follow when the overlay opens",
-                        isOn: binding(for: \.isVoiceFollowEnabledByDefault)
-                    )
-
-                    sliderSetting(
-                        title: "Matching sensitivity",
-                        valueText: currentSettings.speechFollowSensitivity.formatted(
-                            .number.precision(.fractionLength(2))
-                        ),
-                        value: binding(for: \.speechFollowSensitivity),
-                        range: 0.45...0.9,
-                        step: 0.01
-                    )
                 }
+
+                Toggle(
+                    "Start voice follow when the overlay opens",
+                    isOn: binding(for: \.isVoiceFollowEnabledByDefault)
+                )
+
+                sliderSetting(
+                    title: "Matching sensitivity",
+                    valueText: currentSettings.speechFollowSensitivity.formatted(
+                        .number.precision(.fractionLength(2))
+                    ),
+                    value: binding(for: \.speechFollowSensitivity),
+                    range: 0.45...0.9,
+                    step: 0.01
+                )
+            } header: {
+                Text("Voice Follow")
+            } footer: {
+                Label(
+                    "Voice Follow uses Apple’s on-device speech recognition. Audio isn’t sent to a third party.",
+                    systemImage: "hand.raised.fill"
+                )
+                .foregroundStyle(.secondary)
             }
         }
     }
 
     private var appearanceContent: some View {
-        VStack(spacing: 18) {
-            settingsCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Typography")
-                        .font(.headline)
-
-                    LabeledContent("Font") {
-                        Picker("Font", selection: binding(for: \.fontName)) {
-                            ForEach(availableFonts, id: \.self) { font in
-                                Text(font).tag(font)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 260)
+        Group {
+            Section {
+                Picker("Font", selection: binding(for: \.fontName)) {
+                    ForEach(availableFonts, id: \.self) { font in
+                        Text(font).tag(font)
                     }
-
-                    sliderSetting(
-                        title: "Font size",
-                        valueText: "\(Int(currentSettings.fontSize)) pt",
-                        value: binding(for: \.fontSize),
-                        range: 20...96,
-                        step: 2
-                    )
-
-                    sliderSetting(
-                        title: "Line spacing",
-                        valueText: "\(Int(currentSettings.lineSpacing)) pt",
-                        value: binding(for: \.lineSpacing),
-                        range: 0...32,
-                        step: 1
-                    )
                 }
+
+                sliderSetting(
+                    title: "Font size",
+                    valueText: "\(Int(currentSettings.fontSize)) pt",
+                    value: binding(for: \.fontSize),
+                    range: 20...96,
+                    step: 2
+                )
+
+                sliderSetting(
+                    title: "Line spacing",
+                    valueText: "\(Int(currentSettings.lineSpacing)) pt",
+                    value: binding(for: \.lineSpacing),
+                    range: 0...32,
+                    step: 1
+                )
+            } header: {
+                Text("Typography")
             }
 
-            settingsCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Overlay")
-                        .font(.headline)
-
-                    sliderSetting(
-                        title: "Opacity",
-                        valueText: "\(Int(currentSettings.overlayOpacity * 100))%",
-                        value: binding(for: \.overlayOpacity),
-                        range: 0.45...1,
-                        step: 0.05
-                    )
-                }
+            Section {
+                sliderSetting(
+                    title: "Opacity",
+                    valueText: "\(Int(currentSettings.overlayOpacity * 100))%",
+                    value: binding(for: \.overlayOpacity),
+                    range: 0.45...1,
+                    step: 0.05
+                )
+            } header: {
+                Text("Overlay")
+            } footer: {
+                Text("Choose a comfortable text style and overlay contrast for your reading environment.")
             }
         }
     }
 
     private var shortcutsContent: some View {
-        settingsCard {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Global shortcuts")
-                    .font(.headline)
-                    .padding(.bottom, 6)
-
-                Text("These shortcuts work while TelepromptMe is running, even when another app is active.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 10)
-
-                ForEach(AppShortcutCommand.versionOneCommands) { command in
-                    HStack(spacing: 20) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(command.title)
-                            Text(command.subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        if isShortcutAssigned(command) {
-                            ShortcutBadge(shortcut: shortcut(for: command))
-                        } else {
-                            Text("Not assigned")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Button("Edit") {
-                            editingShortcut = command
-                        }
-                        .accessibilityLabel("Edit \(command.title) shortcut")
+        Section {
+            ForEach(AppShortcutCommand.versionOneCommands) { command in
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(command.title)
+                        Text(command.subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, 12)
 
-                    if command != AppShortcutCommand.versionOneCommands.last {
-                        Divider()
+                    Spacer()
+
+                    if isShortcutAssigned(command) {
+                        ShortcutBadge(shortcut: shortcut(for: command))
+                    } else {
+                        Text("Not assigned")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
+
+                    Button("Edit") {
+                        editingShortcut = command
+                    }
+                    .accessibilityLabel("Edit \(command.title) shortcut")
                 }
+                .padding(.vertical, 4)
             }
+        } header: {
+            Text("Global Shortcuts")
+        } footer: {
+            Text("These shortcuts work while TelepromptMe is running, even when another app is active.")
         }
     }
 
@@ -256,25 +205,16 @@ struct SettingsView: View {
         step: Double
     ) -> some View {
         LabeledContent(title) {
-            HStack {
+            HStack(spacing: 12) {
                 Slider(value: value, in: range, step: step)
-                    .frame(width: 220)
+                    .frame(minWidth: 180, idealWidth: 220)
                 Text(valueText)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
                     .monospacedDigit()
-                    .frame(width: 58, alignment: .trailing)
+                    .frame(width: 72, alignment: .trailing)
             }
         }
-    }
-
-    private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .strokeBorder(Color.white.opacity(0.08))
-            }
     }
 
     private func binding<Value>(
@@ -361,16 +301,5 @@ struct SettingsView: View {
             return
         }
         saveSettings()
-    }
-
-    private var sectionDescription: String {
-        switch selectedSection {
-        case .general:
-            return "Set a comfortable, predictable autoplay speed."
-        case .appearance:
-            return "Adjust the text and overlay for your reading environment."
-        case .shortcuts:
-            return "Choose the global keys for the three essential teleprompter actions."
-        }
     }
 }
