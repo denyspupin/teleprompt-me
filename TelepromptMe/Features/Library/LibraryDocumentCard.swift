@@ -31,15 +31,6 @@ struct LibraryDocumentCard: View {
                             .foregroundStyle(.yellow)
                             .accessibilityLabel("Favorite")
                     }
-
-                    if isActive {
-                        Text("Active")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(Color.accentColor.opacity(0.12), in: Capsule())
-                    }
                 }
 
                 Text(document.plainText.isEmpty ? "Empty script" : document.plainText)
@@ -59,13 +50,19 @@ struct LibraryDocumentCard: View {
 
             Spacer(minLength: 12)
 
-            Button(action: onActivate) {
-                Label(isActive ? "Presenting" : "Present", systemImage: isActive ? "checkmark" : "play.fill")
+            if isActive {
+                Label("Active", systemImage: "checkmark.circle.fill")
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 72)
+                    .accessibilityLabel("Active teleprompter script")
+            } else {
+                Button(action: onActivate) {
+                    Label("Present", systemImage: "play.fill")
+                }
+                .buttonStyle(.bordered)
+                .help("Show in Teleprompter")
             }
-            .buttonStyle(.borderedProminent)
-            .tint(isActive ? .secondary : .accentColor)
-            .disabled(isActive)
-            .help(isActive ? "This script is active" : "Show in Teleprompter")
 
             Menu {
                 Button(action: onEdit) {

@@ -68,18 +68,18 @@ struct ShortcutBadge: View {
     let shortcut: AppShortcut
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 2) {
             ForEach(tokens, id: \.self) { token in
                 Text(token)
                     .font(.system(size: 12, weight: .semibold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5))
-                    }
             }
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5))
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(shortcut.displayName)

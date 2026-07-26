@@ -85,6 +85,18 @@ The intended v1 journey is:
 - Keep all toolbar actions available through the menu bar or another visible interface.
 - Avoid adding visual customization that does not improve reading or presenting.
 
+## Consistency pass
+
+The final v1 walkthrough tightened repeated patterns across the app:
+
+- Library rows use neutral Present buttons so a list never shows several competing primary actions.
+- The active script uses one trailing status treatment instead of repeating the state beside the title and action.
+- The editor keeps Present Script as its single primary action and does not also show the generic overlay toolbar action.
+- Overlay actions consistently use **Restart From Top** and **Voice Follow** terminology.
+- Shortcut combinations appear as one compact keycap instead of a collection of unrelated pills.
+- The Settings window restores the last pane a person used.
+- The library remains legible and actionable from its default size down to a compact 640-point window.
+
 ## Acceptance criteria
 
 - The library, editor, overlay, and settings remain usable in Light and Dark Mode.

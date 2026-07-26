@@ -97,7 +97,7 @@ struct TeleprompterOverlayView: View {
                 .buttonStyle(.glassProminent)
                 .help(appState.playbackController.state == .playing ? "Pause" : "Play")
 
-                controlButton(systemImage: "backward.end.fill", label: "Start Over") {
+                controlButton(systemImage: "arrow.counterclockwise", label: "Restart From Top") {
                     appState.restartPlayback()
                 }
 
@@ -107,7 +107,7 @@ struct TeleprompterOverlayView: View {
                         : "waveform.circle",
                     label: appState.speechFollowController.isListening
                         ? "Stop Voice Follow"
-                        : "Follow Voice"
+                        : "Start Voice Follow"
                 ) {
                     appState.toggleVoiceFollow()
                 }

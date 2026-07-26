@@ -37,13 +37,15 @@ struct LibraryView: View {
                     }
                     .help("New Script")
 
-                    Button(action: appState.toggleOverlay) {
-                        Label(
-                            overlayButtonTitle,
-                            systemImage: appState.isOverlayVisible ? "eye.slash.fill" : "eye.fill"
-                        )
+                    if selectedDocument == nil {
+                        Button(action: appState.toggleOverlay) {
+                            Label(
+                                overlayButtonTitle,
+                                systemImage: appState.isOverlayVisible ? "eye.slash.fill" : "eye.fill"
+                            )
+                        }
+                        .help(overlayButtonTitle)
                     }
-                    .help(overlayButtonTitle)
                 }
             }
             .onAppear {
