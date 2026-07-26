@@ -17,6 +17,14 @@ struct SettingsView: View {
         settings.first ?? AppSettings()
     }
 
+    private var speechLocales: [Locale] {
+        let defaults = ["en_US", "en_GB", "de_DE", "es_ES", "fr_FR"]
+        let identifiers = defaults.contains(currentSettings.selectedSpeechLocaleIdentifier)
+            ? defaults
+            : [currentSettings.selectedSpeechLocaleIdentifier] + defaults
+        return identifiers.map(Locale.init(identifier:))
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -67,31 +75,76 @@ struct SettingsView: View {
     }
 
     private var generalContent: some View {
-        settingsCard {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Autoplay")
-                    .font(.headline)
+        VStack(spacing: 18) {
+            settingsCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Autoplay")
+                        .font(.headline)
 
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Reading speed")
-                        Text("Controls how quickly the active script advances.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Reading speed")
+                            Text("Controls how quickly the active script advances.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Slider(
+                            value: binding(for: \.playbackSpeedWordsPerMinute),
+                            in: 60...260,
+                            step: 5
+                        )
+                        .frame(width: 220)
+
+                        Text("\(Int(currentSettings.playbackSpeedWordsPerMinute)) WPM")
+                            .monospacedDigit()
+                            .frame(width: 76, alignment: .trailing)
+                    }
+                }
+            }
+
+            settingsCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Voice follow")
+                        .font(.headline)
+
+                    Text("Uses Apple's on-device speech recognition. Audio is not sent to a third-party provider.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    LabeledContent("Language") {
+                        Picker(
+                            "Language",
+                            selection: binding(for: \.selectedSpeechLocaleIdentifier)
+                        ) {
+                            ForEach(speechLocales, id: \.identifier) { locale in
+                                Text(
+                                    Locale.current.localizedString(forIdentifier: locale.identifier)
+                                        ?? locale.identifier
+                                )
+                                .tag(locale.identifier)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 260)
                     }
 
-                    Spacer()
-
-                    Slider(
-                        value: binding(for: \.playbackSpeedWordsPerMinute),
-                        in: 60...260,
-                        step: 5
+                    Toggle(
+                        "Start voice follow when the overlay opens",
+                        isOn: binding(for: \.isVoiceFollowEnabledByDefault)
                     )
-                    .frame(width: 220)
 
-                    Text("\(Int(currentSettings.playbackSpeedWordsPerMinute)) WPM")
-                        .monospacedDigit()
-                        .frame(width: 76, alignment: .trailing)
+                    sliderSetting(
+                        title: "Matching sensitivity",
+                        valueText: currentSettings.speechFollowSensitivity.formatted(
+                            .number.precision(.fractionLength(2))
+                        ),
+                        value: binding(for: \.speechFollowSensitivity),
+                        range: 0.45...0.9,
+                        step: 0.01
+                    )
                 }
             }
         }

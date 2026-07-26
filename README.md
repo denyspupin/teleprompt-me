@@ -14,6 +14,7 @@ TelepromptMe is a native macOS teleprompter built for people who speak to a came
 - Create, edit, organize, favorite, and locally persist scripts.
 - Open a script in a floating overlay that stays available across spaces and fullscreen apps.
 - Play, pause, restart, and adjust automatic scrolling by words per minute.
+- Follow spoken progress using Apple's built-in on-device speech recognition.
 - Customize overlay typography, line spacing, and opacity.
 - Customize focused global shortcuts for overlay visibility, playback, and restart.
 
@@ -50,14 +51,14 @@ xcodebuild -project TelepromptMe.xcodeproj \
 
 ## Privacy
 
-Scripts and settings are stored locally. The v1 app does not need microphone, speech-recognition, or network access.
+Scripts and settings are stored locally. Voice follow uses Apple's on-device speech recognition and requires microphone and speech-recognition permission. The v1 app does not use third-party speech providers, downloadable models, or network access.
 
 ## Repository guide
 
 - `TelepromptMe/App` — app lifecycle and shared state
 - `TelepromptMe/Core` — persisted and domain models
 - `TelepromptMe/Features` — library, editor, overlay, and settings UI
-- `TelepromptMe/Shared/Services` — playback, persistence, overlay, and shortcuts
+- `TelepromptMe/Shared/Services` — playback, persistence, overlay, shortcuts, and Apple voice follow
 - `TelepromptMeTests` — playback and script-library tests
 - `docs` — current capability and distribution notes
 - `scripts` — packaging automation

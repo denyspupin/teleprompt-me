@@ -13,6 +13,7 @@ final class AppState {
 
     let overlayManager = OverlayWindowManager()
     let playbackController = PlaybackController()
+    let speechFollowController = SpeechFollowController()
     let shortcutManager = ShortcutManager()
     var settingsSnapshot = AppSettingsSnapshot.default
     var isToggleOverlayShortcutAssigned = true
@@ -54,6 +55,9 @@ final class AppState {
     }
 
     func togglePlayback() {
+        if speechFollowController.isListening {
+            stopVoiceFollow()
+        }
         playbackController.togglePlayback()
         syncOverlayInteractivity()
     }
@@ -69,11 +73,13 @@ final class AppState {
     }
 
     func stop() {
+        stopVoiceFollow()
         playbackController.stop()
         syncOverlayInteractivity()
     }
 
     func restartPlayback() {
+        stopVoiceFollow()
         playbackController.restartFromTop()
         syncOverlayInteractivity()
     }
@@ -82,6 +88,7 @@ final class AppState {
         if playbackController.state == .playing {
             playbackController.pause()
         }
+        stopVoiceFollow()
         overlayManager.hide()
         isOverlayVisible = overlayManager.isVisible
         syncOverlayInteractivity()
@@ -90,6 +97,9 @@ final class AppState {
     func presentOverlayIfNeeded() {
         overlayManager.present(appState: self)
         isOverlayVisible = overlayManager.isVisible
+        if settingsSnapshot.isVoiceFollowEnabledByDefault {
+            startVoiceFollow()
+        }
         syncOverlayInteractivity()
     }
 
@@ -102,6 +112,7 @@ final class AppState {
     }
 
     func activateScript(id: String? = nil, title: String, text: String) {
+        stopVoiceFollow()
         activeScriptID = id
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -109,6 +120,28 @@ final class AppState {
         activeScriptTitle = trimmedTitle.isEmpty ? "Untitled Script" : trimmedTitle
         activeScriptText = trimmedText.isEmpty ? "This script is empty."
             : trimmedText
+    }
+
+    func toggleVoiceFollow() {
+        if speechFollowController.isListening {
+            stopVoiceFollow()
+        } else {
+            startVoiceFollow()
+        }
+    }
+
+    func startVoiceFollow() {
+        playbackController.pause()
+        speechFollowController.start(
+            script: activeScriptText,
+            localeIdentifier: settingsSnapshot.selectedSpeechLocaleIdentifier,
+            sensitivity: settingsSnapshot.speechFollowSensitivity,
+            playbackController: playbackController
+        )
+    }
+
+    func stopVoiceFollow() {
+        speechFollowController.stop()
     }
 
     func syncOverlayInteractivity() {

@@ -30,9 +30,20 @@ TelepromptMe v1 is a focused, local macOS teleprompter.
 - Clamps speed and scroll position to supported bounds.
 - Stops cleanly at the end of the script.
 
+## Voice Follow
+
+- Uses Apple's built-in on-device speech recognition.
+- Advances the active script by matching recognized phrases.
+- Pauses autoplay while listening.
+- Shows listening, following, finding-place, and failure states.
+- Supports language, matching-sensitivity, and automatic-start settings.
+- Stops listening when the overlay hides, playback starts, or the active script changes.
+- Does not include Whisper, downloadable models, third-party speech providers, or network access.
+
 ## Settings
 
 - Configures autoplay speed.
+- Configures Apple voice-follow language, matching sensitivity, and automatic start.
 - Configures font family, font size, line spacing, and overlay opacity.
 - Every visible setting has an implemented effect.
 
@@ -56,3 +67,4 @@ TelepromptMe v1 is a focused, local macOS teleprompter.
 - Covers script persistence and deletion.
 - Covers non-destructive collection deletion.
 - Covers shortcut defaults, customization, clearing, and persistence.
+- Covers script-progress matching and rejection of unrelated speech.

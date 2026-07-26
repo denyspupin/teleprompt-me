@@ -363,6 +363,9 @@ struct AppSettingsSnapshot: Equatable {
     var lineSpacing: Double
     var overlayOpacity: Double
     var playbackSpeedWordsPerMinute: Double
+    var isVoiceFollowEnabledByDefault: Bool
+    var selectedSpeechLocaleIdentifier: String
+    var speechFollowSensitivity: Double
     var toggleOverlayShortcut: AppShortcut
     var togglePlaybackShortcut: AppShortcut
     var restartPlaybackShortcut: AppShortcut
@@ -373,6 +376,9 @@ struct AppSettingsSnapshot: Equatable {
         lineSpacing = settings.lineSpacing
         overlayOpacity = settings.overlayOpacity
         playbackSpeedWordsPerMinute = settings.playbackSpeedWordsPerMinute
+        isVoiceFollowEnabledByDefault = settings.isVoiceFollowEnabledByDefault
+        selectedSpeechLocaleIdentifier = settings.selectedSpeechLocaleIdentifier
+        speechFollowSensitivity = settings.speechFollowSensitivity
         toggleOverlayShortcut = settings.toggleOverlayShortcut
         togglePlaybackShortcut = settings.togglePlaybackShortcut
         restartPlaybackShortcut = settings.restartPlaybackShortcut

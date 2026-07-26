@@ -2,5 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TelepromptMe listens locally so the teleprompter can follow your spoken script.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>TelepromptMe uses Apple's on-device speech recognition to follow your progress through a script.</string>
 </dict>
 </plist>

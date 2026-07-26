@@ -31,6 +31,11 @@
 		A000000000000000000000D4 /* ScriptLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */; };
 		A000000000000000000000E0 /* ShortcutEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E1 /* ShortcutEditorSheet.swift */; };
 		A000000000000000000000E2 /* ShortcutSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E3 /* ShortcutSettingsTests.swift */; };
+		A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000092 /* SpeechRecognitionEngine.swift */; };
+		A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */; };
+		A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000094 /* ScriptProgressMatcher.swift */; };
+		A00000000000000000000090 /* SpeechFollowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* SpeechFollowController.swift */; };
+		A000000000000000000000F0 /* ScriptProgressMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F1 /* ScriptProgressMatcherTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,6 +89,11 @@
 		A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLibraryStoreTests.swift; sourceTree = "<group>"; };
 		A000000000000000000000E1 /* ShortcutEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutEditorSheet.swift; sourceTree = "<group>"; };
 		A000000000000000000000E3 /* ShortcutSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutSettingsTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000092 /* SpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSpeechRecognitionEngine.swift; sourceTree = "<group>"; };
+		A00000000000000000000094 /* ScriptProgressMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptProgressMatcher.swift; sourceTree = "<group>"; };
+		A00000000000000000000095 /* SpeechFollowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechFollowController.swift; sourceTree = "<group>"; };
+		A000000000000000000000F1 /* ScriptProgressMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptProgressMatcherTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +150,7 @@
 				A000000000000000000000D1 /* PlaybackControllerTests.swift */,
 				A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */,
 				A000000000000000000000E3 /* ShortcutSettingsTests.swift */,
+				A000000000000000000000F1 /* ScriptProgressMatcherTests.swift */,
 			);
 			path = TelepromptMeTests;
 			sourceTree = "<group>";
@@ -251,6 +262,7 @@
 				A00000000000000000000037 /* Overlay */,
 				A00000000000000000000038 /* Playback */,
 				A0000000000000000000003F /* Persistence */,
+				A00000000000000000000096 /* Speech */,
 				A00000000000000000000039 /* Shortcuts */,
 			);
 			path = Services;
@@ -263,6 +275,17 @@
 				A000000000000000000000D3 /* ScriptLibraryStore.swift */,
 			);
 			path = Persistence;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000096 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000092 /* SpeechRecognitionEngine.swift */,
+				A00000000000000000000093 /* AppleSpeechRecognitionEngine.swift */,
+				A00000000000000000000094 /* ScriptProgressMatcher.swift */,
+				A00000000000000000000095 /* SpeechFollowController.swift */,
+			);
+			path = Speech;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -384,6 +407,10 @@
 				A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */,
 				A0000000000000000000000F /* PersistenceController.swift in Sources */,
 				A000000000000000000000D2 /* ScriptLibraryStore.swift in Sources */,
+				A0000000000000000000008D /* SpeechRecognitionEngine.swift in Sources */,
+				A0000000000000000000008E /* AppleSpeechRecognitionEngine.swift in Sources */,
+				A0000000000000000000008F /* ScriptProgressMatcher.swift in Sources */,
+				A00000000000000000000090 /* SpeechFollowController.swift in Sources */,
 				A00000000000000000000087 /* ScriptFormatting.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -395,6 +422,7 @@
 				A000000000000000000000D0 /* PlaybackControllerTests.swift in Sources */,
 				A000000000000000000000D4 /* ScriptLibraryStoreTests.swift in Sources */,
 				A000000000000000000000E2 /* ShortcutSettingsTests.swift in Sources */,
+				A000000000000000000000F0 /* ScriptProgressMatcherTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
