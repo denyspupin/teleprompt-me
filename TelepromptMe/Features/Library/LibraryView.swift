@@ -149,15 +149,21 @@ struct LibraryView: View {
                         .foregroundStyle(.tertiary)
                 }
             } header: {
-                HStack {
+                HStack(spacing: 8) {
                     Text("Collections")
-                    Spacer()
+                    Spacer(minLength: 8)
+
                     Button(action: createCollection) {
                         Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .semibold))
+                            .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .help("New Collection")
+                    .accessibilityLabel("New Collection")
                 }
+                .padding(.trailing, 8)
             }
         }
         .listStyle(.sidebar)
