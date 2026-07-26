@@ -20,24 +20,28 @@ struct TeleprompterOverlayView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: Layout.titleSpacing) {
-                    Label(appState.activeScriptTitle, systemImage: "text.document")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(appState.activeScriptTitle)
+                        .font(.headline.weight(.semibold))
                         .lineLimit(1)
 
-                    Text(speedLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if !speechStatusLabel.isEmpty {
-                        Text(speechStatusLabel)
+                    HStack(spacing: Layout.titleSpacing) {
+                        Label(speedLabel, systemImage: "speedometer")
                             .font(.caption)
-                            .foregroundStyle(speechStatusColor)
-                    }
+                            .foregroundStyle(.secondary)
 
+                        if !speechStatusLabel.isEmpty {
+                            Label(speechStatusLabel, systemImage: speechStatusImage)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(speechStatusColor)
+                                .lineLimit(1)
+                                .help(speechStatusLabel)
+                        }
+                    }
                 }
+
                 Spacer()
                 controlBar
             }
@@ -48,13 +52,14 @@ struct TeleprompterOverlayView: View {
         .padding(.vertical, Layout.verticalPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
-            .ultraThinMaterial.opacity(appState.settingsSnapshot.overlayOpacity),
-            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
+            .regularMaterial.opacity(appState.settingsSnapshot.overlayOpacity),
+            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 1)
         )
+        .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
         .padding(8)
         .onChange(of: appState.activeScriptID) { _, _ in
             appState.playbackController.stop()
@@ -77,31 +82,40 @@ struct TeleprompterOverlayView: View {
     }
 
     private var controlBar: some View {
-        HStack(spacing: 8) {
-            controlButton(
-                systemImage: appState.playbackController.state == .playing ? "pause.fill" : "play.fill",
-                label: appState.playbackController.state == .playing ? "Pause" : "Play"
-            ) {
-                appState.togglePlayback()
-            }
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                Button {
+                    appState.togglePlayback()
+                } label: {
+                    Label(
+                        appState.playbackController.state == .playing ? "Pause" : "Play",
+                        systemImage: appState.playbackController.state == .playing ? "pause.fill" : "play.fill"
+                    )
+                    .labelStyle(.iconOnly)
+                    .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.glassProminent)
+                .help(appState.playbackController.state == .playing ? "Pause" : "Play")
 
-            controlButton(systemImage: "backward.end.fill", label: "Start Over") {
-                appState.restartPlayback()
-            }
+                controlButton(systemImage: "backward.end.fill", label: "Start Over") {
+                    appState.restartPlayback()
+                }
 
-            controlButton(
-                systemImage: appState.speechFollowController.isListening
-                    ? "waveform.circle.fill"
-                    : "waveform.circle",
-                label: appState.speechFollowController.isListening
-                    ? "Stop Voice Follow"
-                    : "Follow Voice"
-            ) {
-                appState.toggleVoiceFollow()
-            }
+                controlButton(
+                    systemImage: appState.speechFollowController.isListening
+                        ? "waveform.circle.fill"
+                        : "waveform.circle",
+                    label: appState.speechFollowController.isListening
+                        ? "Stop Voice Follow"
+                        : "Follow Voice"
+                ) {
+                    appState.toggleVoiceFollow()
+                }
+                .tint(appState.speechFollowController.isListening ? .accentColor : nil)
 
-            controlButton(systemImage: "eye.slash.fill", label: "Hide") {
-                appState.hideOverlay()
+                controlButton(systemImage: "eye.slash.fill", label: "Hide") {
+                    appState.hideOverlay()
+                }
             }
         }
         .frame(height: Layout.controlHeight)
@@ -112,10 +126,10 @@ struct TeleprompterOverlayView: View {
             Image(systemName: systemImage)
                 .font(.system(size: 13, weight: .semibold))
                 .frame(width: 28, height: 28)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
         .help(label)
+        .accessibilityLabel(label)
     }
 
     private var speedLabel: String {
@@ -145,6 +159,21 @@ struct TeleprompterOverlayView: View {
             return .orange
         default:
             return .secondary
+        }
+    }
+
+    private var speechStatusImage: String {
+        switch appState.speechFollowController.state {
+        case .idle:
+            return "waveform"
+        case .listening:
+            return "mic.fill"
+        case .matching:
+            return "waveform.badge.checkmark"
+        case .lost:
+            return "questionmark.circle"
+        case .failed:
+            return "exclamationmark.triangle.fill"
         }
     }
 

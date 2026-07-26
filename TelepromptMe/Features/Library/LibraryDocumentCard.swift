@@ -1,127 +1,125 @@
+import AppKit
 import SwiftUI
-
-enum LibraryDocumentAction: Hashable {
-    case favorite(String)
-    case activate(String)
-    case edit(String)
-    case delete(String)
-}
 
 struct LibraryDocumentCard: View {
     let document: ScriptDocument
-    let hoveredAction: LibraryDocumentAction?
-    let onHoverActionChange: (LibraryDocumentAction?) -> Void
+    let isActive: Bool
     let onToggleFavorite: () -> Void
     let onActivate: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 14) {
+            Image(systemName: "doc.text")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                .frame(width: 34, height: 34)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 7) {
                     Text(document.title)
                         .font(.headline)
-                        .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Text(document.plainText.isEmpty ? "Empty script" : document.plainText)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                    if document.isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                            .accessibilityLabel("Favorite")
+                    }
+
+                    if isActive {
+                        Text("Active")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    }
                 }
 
-                Spacer()
+                Text(document.plainText.isEmpty ? "Empty script" : document.plainText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
 
-                HStack(spacing: 8) {
-                    quickActionButton(
-                        id: .favorite(document.id),
-                        systemImage: document.isFavorite ? "star.fill" : "star",
-                        accessibilityLabel: document.isFavorite ? "Remove from favorites" : "Add to favorites",
-                        action: onToggleFavorite
-                    )
+                HStack(spacing: 6) {
+                    Text(document.updatedAt.relativeLibraryDate)
+                    Text("•")
+                    Text("\(document.plainText.wordCount) words")
+                }
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            }
 
-                    quickActionButton(
-                        id: .activate(document.id),
-                        systemImage: "play.fill",
-                        accessibilityLabel: "Show in teleprompter",
-                        action: onActivate
-                    )
+            Spacer(minLength: 12)
 
-                    quickActionButton(
-                        id: .edit(document.id),
-                        systemImage: "pencil",
-                        accessibilityLabel: "Edit script",
-                        action: onEdit
-                    )
+            Button(action: onActivate) {
+                Label(isActive ? "Presenting" : "Present", systemImage: isActive ? "checkmark" : "play.fill")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(isActive ? .secondary : .accentColor)
+            .disabled(isActive)
+            .help(isActive ? "This script is active" : "Show in Teleprompter")
 
-                    quickActionButton(
-                        id: .delete(document.id),
-                        systemImage: "trash",
-                        accessibilityLabel: "Delete script",
-                        action: onDelete
+            Menu {
+                Button(action: onEdit) {
+                    Label("Edit Script", systemImage: "pencil")
+                }
+
+                Button(action: onToggleFavorite) {
+                    Label(
+                        document.isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                        systemImage: document.isFavorite ? "star.slash" : "star"
                     )
                 }
-            }
 
-            HStack {
-                Text(document.updatedAt.relativeLibraryDate)
-                Spacer()
-                Text("\(document.plainText.wordCount) words")
+                Divider()
+
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete Script", systemImage: "trash")
+                }
+            } label: {
+                Label("More", systemImage: "ellipsis")
+                    .labelStyle(.iconOnly)
             }
-            .font(.caption)
-            .foregroundStyle(.tertiary)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .help("Script Actions")
         }
-        .padding(16)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(contentCard)
+        .background(cardBackground)
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .onTapGesture(count: 2, perform: onEdit)
+        .onHover { isHovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: isHovered)
         .contextMenu {
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete Script", systemImage: "trash")
-            }
-        }
-    }
-
-    private var contentCard: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(Color.white.opacity(0.03))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
+            Button("Edit Script", action: onEdit)
+            Button(
+                document.isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                action: onToggleFavorite
             )
+            Divider()
+            Button("Delete Script", role: .destructive, action: onDelete)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Edit Script", onEdit)
     }
 
-    private func quickActionButton(
-        id: LibraryDocumentAction,
-        systemImage: String,
-        accessibilityLabel: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        let isHovered = hoveredAction == id
-
-        return Button(action: action) {
-            ZStack {
-                Circle()
-                    .fill(isHovered ? Color.accentColor.opacity(0.32) : Color.white.opacity(0.06))
-
-                Circle()
-                    .strokeBorder(isHovered ? Color.accentColor.opacity(0.75) : Color.white.opacity(0.08), lineWidth: 1)
-
-                Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isHovered ? Color.white : Color.primary.opacity(0.88))
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(isHovered ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.10) : Color(nsColor: .controlBackgroundColor))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(isHovered ? 0.8 : 0.45))
             }
-            .frame(width: 30, height: 30)
-            .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .scaleEffect(isHovered ? 1.06 : 1)
-        .shadow(color: isHovered ? Color.accentColor.opacity(0.28) : .clear, radius: 8, y: 2)
-        .animation(.easeOut(duration: 0.14), value: isHovered)
-        .onHover { isHovering in
-            onHoverActionChange(isHovering ? id : (hoveredAction == id ? nil : hoveredAction))
-        }
-        .help(accessibilityLabel)
+            .shadow(color: .black.opacity(isHovered ? 0.08 : 0.035), radius: isHovered ? 8 : 3, y: 2)
     }
 }

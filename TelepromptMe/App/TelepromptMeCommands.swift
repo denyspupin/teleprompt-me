@@ -1,9 +1,29 @@
 import SwiftUI
 
+private struct NewScriptActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+extension FocusedValues {
+    var newScriptAction: (() -> Void)? {
+        get { self[NewScriptActionKey.self] }
+        set { self[NewScriptActionKey.self] = newValue }
+    }
+}
+
 struct TelepromptMeCommands: Commands {
     @Bindable var appState: AppState
+    @FocusedValue(\.newScriptAction) private var newScriptAction
 
     var body: some Commands {
+        CommandGroup(replacing: .newItem) {
+            Button("New Script") {
+                newScriptAction?()
+            }
+            .keyboardShortcut("n")
+            .disabled(newScriptAction == nil)
+        }
+
         CommandMenu("Playback") {
             shortcutMenuButton(
                 title: appState.playbackController.state == .playing ? "Pause" : "Play",
@@ -28,12 +48,14 @@ struct TelepromptMeCommands: Commands {
             Divider()
 
             shortcutMenuButton(
-                title: "Show Overlay",
+                title: appState.isOverlayVisible ? "Hide Overlay" : "Show Overlay",
                 shortcut: appState.settingsSnapshot.toggleOverlayShortcut,
                 isAssigned: appState.isToggleOverlayShortcutAssigned
             ) {
-                appState.presentOverlayIfNeeded()
+                appState.toggleOverlay()
             }
+
+            Divider()
 
             Button("Faster") {
                 appState.playbackController.increaseSpeed()
@@ -42,7 +64,6 @@ struct TelepromptMeCommands: Commands {
             Button("Slower") {
                 appState.playbackController.decreaseSpeed()
             }
-
         }
     }
 

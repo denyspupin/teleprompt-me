@@ -12,15 +12,16 @@ struct ScriptEditorView: View {
     @FocusState.Binding var focusedEditor: ScriptEditorFocus?
     let onBack: () -> Void
     let onDelete: () -> Void
+    let onPresent: () -> Void
     let onPresentWritingTools: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            toolbar
+        VStack(alignment: .leading, spacing: 16) {
+            editorHeader
             titleEditor
             bodyEditor
 
-            Text("Changes are saved automatically. Apple Intelligence Writing Tools are available from the text controls.")
+            Label("Saved automatically", systemImage: "checkmark.circle")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -29,10 +30,10 @@ struct ScriptEditorView: View {
         }
     }
 
-    private var toolbar: some View {
+    private var editorHeader: some View {
         HStack {
             Button(action: onBack) {
-                Label("Back", systemImage: "chevron.left")
+                Label("All Scripts", systemImage: "chevron.left")
             }
             .buttonStyle(.borderless)
 
@@ -43,10 +44,22 @@ struct ScriptEditorView: View {
                     .buttonStyle(.bordered)
             }
 
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete", systemImage: "trash")
+            Menu {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete Script", systemImage: "trash")
+                }
+            } label: {
+                Label("More", systemImage: "ellipsis.circle")
+                    .labelStyle(.iconOnly)
             }
-            .buttonStyle(.bordered)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .help("Script Actions")
+
+            Button(action: onPresent) {
+                Label("Present Script", systemImage: "play.fill")
+            }
+            .buttonStyle(.borderedProminent)
         }
     }
 
@@ -54,7 +67,7 @@ struct ScriptEditorView: View {
         VStack(alignment: .leading, spacing: 6) {
             TextField("Script title", text: $draftTitle)
                 .textFieldStyle(.plain)
-                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .font(.largeTitle.weight(.bold))
                 .writingToolsBehavior(.complete)
                 .focused($focusedEditor, equals: .title)
 
@@ -74,10 +87,15 @@ struct ScriptEditorView: View {
             .scrollContentBackground(.hidden)
             .writingToolsBehavior(.complete)
             .focused($focusedEditor, equals: .body)
+            .padding(12)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color(nsColor: .textBackgroundColor))
             )
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.55))
+            }
     }
 }
