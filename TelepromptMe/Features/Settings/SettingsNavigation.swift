@@ -3,6 +3,7 @@ import SwiftUI
 enum SettingsSection: String, CaseIterable, Identifiable {
     case general
     case appearance
+    case shortcuts
 
     var id: String { rawValue }
 
@@ -12,6 +13,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
             return "General"
         case .appearance:
             return "Appearance"
+        case .shortcuts:
+            return "Keyboard Shortcuts"
         }
     }
 
@@ -21,6 +24,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
             return "gearshape"
         case .appearance:
             return "textformat"
+        case .shortcuts:
+            return "command"
         }
     }
 }

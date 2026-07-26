@@ -29,6 +29,8 @@
 		A000000000000000000000D0 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D1 /* PlaybackControllerTests.swift */; };
 		A000000000000000000000D2 /* ScriptLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D3 /* ScriptLibraryStore.swift */; };
 		A000000000000000000000D4 /* ScriptLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */; };
+		A000000000000000000000E0 /* ShortcutEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E1 /* ShortcutEditorSheet.swift */; };
+		A000000000000000000000E2 /* ShortcutSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E3 /* ShortcutSettingsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +82,8 @@
 		A000000000000000000000D1 /* PlaybackControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackControllerTests.swift; sourceTree = "<group>"; };
 		A000000000000000000000D3 /* ScriptLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLibraryStore.swift; sourceTree = "<group>"; };
 		A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLibraryStoreTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000E1 /* ShortcutEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutEditorSheet.swift; sourceTree = "<group>"; };
+		A000000000000000000000E3 /* ShortcutSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutSettingsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +139,7 @@
 			children = (
 				A000000000000000000000D1 /* PlaybackControllerTests.swift */,
 				A000000000000000000000D5 /* ScriptLibraryStoreTests.swift */,
+				A000000000000000000000E3 /* ShortcutSettingsTests.swift */,
 			);
 			path = TelepromptMeTests;
 			sourceTree = "<group>";
@@ -216,6 +221,7 @@
 			children = (
 				A0000000000000000000001C /* SettingsView.swift */,
 				A00000000000000000000083 /* SettingsNavigation.swift */,
+				A000000000000000000000E1 /* ShortcutEditorSheet.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -374,6 +380,7 @@
 				A0000000000000000000008A /* ScriptEditorView.swift in Sources */,
 				A0000000000000000000000C /* SettingsView.swift in Sources */,
 				A00000000000000000000080 /* SettingsNavigation.swift in Sources */,
+				A000000000000000000000E0 /* ShortcutEditorSheet.swift in Sources */,
 				A0000000000000000000000D /* TeleprompterOverlayView.swift in Sources */,
 				A0000000000000000000000F /* PersistenceController.swift in Sources */,
 				A000000000000000000000D2 /* ScriptLibraryStore.swift in Sources */,
@@ -387,6 +394,7 @@
 			files = (
 				A000000000000000000000D0 /* PlaybackControllerTests.swift in Sources */,
 				A000000000000000000000D4 /* ScriptLibraryStoreTests.swift in Sources */,
+				A000000000000000000000E2 /* ShortcutSettingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -9,6 +9,7 @@ struct SettingsView: View {
 
     @Binding var selectedSection: SettingsSection
     @State private var saveErrorMessage: String?
+    @State private var editingShortcut: AppShortcutCommand?
 
     private let availableFonts = NSFontManager.shared.availableFontFamilies.sorted()
 
@@ -32,6 +33,8 @@ struct SettingsView: View {
                     generalContent
                 case .appearance:
                     appearanceContent
+                case .shortcuts:
+                    shortcutsContent
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -40,6 +43,15 @@ struct SettingsView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             appState.applySettings(currentSettings)
+        }
+        .sheet(item: $editingShortcut) { command in
+            ShortcutEditorSheet(
+                command: command,
+                shortcut: shortcut(for: command),
+                isAssigned: isShortcutAssigned(command),
+                onSave: { updateShortcut(command, value: $0) },
+                onClear: { clearShortcut(command) }
+            )
         }
         .alert(
             "Settings Could Not Be Saved",
@@ -137,6 +149,52 @@ struct SettingsView: View {
         }
     }
 
+    private var shortcutsContent: some View {
+        settingsCard {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Global shortcuts")
+                    .font(.headline)
+                    .padding(.bottom, 6)
+
+                Text("These shortcuts work while TelepromptMe is running, even when another app is active.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 10)
+
+                ForEach(AppShortcutCommand.versionOneCommands) { command in
+                    HStack(spacing: 20) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(command.title)
+                            Text(command.subtitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        if isShortcutAssigned(command) {
+                            ShortcutBadge(shortcut: shortcut(for: command))
+                        } else {
+                            Text("Not assigned")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Button("Edit") {
+                            editingShortcut = command
+                        }
+                        .accessibilityLabel("Edit \(command.title) shortcut")
+                    }
+                    .padding(.vertical, 12)
+
+                    if command != AppShortcutCommand.versionOneCommands.last {
+                        Divider()
+                    }
+                }
+            }
+        }
+    }
+
     private func sliderSetting(
         title: String,
         valueText: String,
@@ -188,12 +246,78 @@ struct SettingsView: View {
         }
     }
 
+    private func shortcut(for command: AppShortcutCommand) -> AppShortcut {
+        switch command {
+        case .toggleOverlay:
+            return currentSettings.toggleOverlayShortcut
+        case .togglePlayback:
+            return currentSettings.togglePlaybackShortcut
+        case .restartPlayback:
+            return currentSettings.restartPlaybackShortcut
+        default:
+            return command.defaultShortcut
+        }
+    }
+
+    private func isShortcutAssigned(_ command: AppShortcutCommand) -> Bool {
+        switch command {
+        case .toggleOverlay:
+            return currentSettings.isToggleOverlayShortcutAssigned
+        case .togglePlayback:
+            return currentSettings.isTogglePlaybackShortcutAssigned
+        case .restartPlayback:
+            return currentSettings.isRestartPlaybackShortcutAssigned
+        default:
+            return false
+        }
+    }
+
+    private func updateShortcut(_ command: AppShortcutCommand, value: AppShortcut) {
+        let duplicate = AppShortcutCommand.versionOneCommands.first { otherCommand in
+            otherCommand != command
+                && isShortcutAssigned(otherCommand)
+                && shortcut(for: otherCommand) == value
+        }
+        guard duplicate == nil else {
+            saveErrorMessage = "That shortcut is already assigned to \(duplicate?.title ?? "another action")."
+            return
+        }
+
+        switch command {
+        case .toggleOverlay:
+            currentSettings.toggleOverlayShortcut = value
+        case .togglePlayback:
+            currentSettings.togglePlaybackShortcut = value
+        case .restartPlayback:
+            currentSettings.restartPlaybackShortcut = value
+        default:
+            return
+        }
+        saveSettings()
+    }
+
+    private func clearShortcut(_ command: AppShortcutCommand) {
+        switch command {
+        case .toggleOverlay:
+            currentSettings.toggleOverlayShortcutModifiersRawValue = -1
+        case .togglePlayback:
+            currentSettings.togglePlaybackShortcutModifiersRawValue = -1
+        case .restartPlayback:
+            currentSettings.restartPlaybackShortcutModifiersRawValue = -1
+        default:
+            return
+        }
+        saveSettings()
+    }
+
     private var sectionDescription: String {
         switch selectedSection {
         case .general:
             return "Set a comfortable, predictable autoplay speed."
         case .appearance:
             return "Adjust the text and overlay for your reading environment."
+        case .shortcuts:
+            return "Choose the global keys for the three essential teleprompter actions."
         }
     }
 }

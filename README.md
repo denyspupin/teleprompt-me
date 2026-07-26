@@ -15,7 +15,7 @@ TelepromptMe is a native macOS teleprompter built for people who speak to a came
 - Open a script in a floating overlay that stays available across spaces and fullscreen apps.
 - Play, pause, restart, and adjust automatic scrolling by words per minute.
 - Customize overlay typography, line spacing, and opacity.
-- Use focused global shortcuts for overlay visibility, playback, and restart.
+- Customize focused global shortcuts for overlay visibility, playback, and restart.
 
 For a more detailed implementation inventory, see [Current Functionality](docs/current-functionality.md).
 

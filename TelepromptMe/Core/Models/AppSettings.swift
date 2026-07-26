@@ -277,6 +277,12 @@ enum AppShortcutCommand: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    static let versionOneCommands: [AppShortcutCommand] = [
+        .toggleOverlay,
+        .togglePlayback,
+        .restartPlayback,
+    ]
+
     var title: String {
         switch self {
         case .toggleOverlay:

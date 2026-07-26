@@ -39,6 +39,8 @@ TelepromptMe v1 is a focused, local macOS teleprompter.
 ## Keyboard Control
 
 - Registers global shortcuts for showing or hiding the overlay, toggling playback, and restarting.
+- Allows each v1 shortcut to be edited or cleared and applies changes immediately.
+- Prevents the same shortcut from being assigned to more than one action.
 - Keeps equivalent overlay controls and application menu commands available.
 
 ## Packaging and Distribution
@@ -53,3 +55,4 @@ TelepromptMe v1 is a focused, local macOS teleprompter.
 - Covers autoplay state and speed behavior.
 - Covers script persistence and deletion.
 - Covers non-destructive collection deletion.
+- Covers shortcut defaults, customization, clearing, and persistence.
