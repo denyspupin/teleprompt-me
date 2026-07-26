@@ -31,7 +31,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 }
 
 struct SettingsWindowView: View {
-    @State private var selectedSection: SettingsSection = .general
+    @AppStorage("settings.selectedSection") private var selectedSection: SettingsSection = .general
 
     var body: some View {
         TabView(selection: $selectedSection) {
