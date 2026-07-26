@@ -21,19 +21,15 @@ final class AppleSpeechRecognitionEngine: SpeechRecognitionEngine {
         failureMessage = nil
         isStopping = false
 
-        guard await requestMicrophoneAuthorization() else {
-            throw SpeechRecognitionError.authorizationDenied
-        }
-
-        guard await requestSpeechAuthorization() else {
+        guard await requestMicrophoneAuthorization(),
+              await requestSpeechAuthorization() else {
             throw SpeechRecognitionError.authorizationDenied
         }
 
         let locale = Locale(identifier: localeIdentifier)
-        guard let recognizer = SFSpeechRecognizer(locale: locale), recognizer.isAvailable else {
-            throw SpeechRecognitionError.recognizerUnavailable
-        }
-        guard recognizer.supportsOnDeviceRecognition else {
+        guard let recognizer = SFSpeechRecognizer(locale: locale),
+              recognizer.isAvailable,
+              recognizer.supportsOnDeviceRecognition else {
             throw SpeechRecognitionError.recognizerUnavailable
         }
 
@@ -74,7 +70,6 @@ final class AppleSpeechRecognitionEngine: SpeechRecognitionEngine {
             if let error {
                 if self?.isStopping == false && !Self.isCancellationError(error) {
                     self?.failureMessage = error.localizedDescription
-                    NSLog("TelepromptMe speech recognition failed: \(error.localizedDescription)")
                 }
                 self?.continuation?.finish()
                 self?.stopAudioCapture()
@@ -97,7 +92,6 @@ final class AppleSpeechRecognitionEngine: SpeechRecognitionEngine {
             audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
         }
-
         recognitionRequest?.endAudio()
         recognitionRequest = nil
     }

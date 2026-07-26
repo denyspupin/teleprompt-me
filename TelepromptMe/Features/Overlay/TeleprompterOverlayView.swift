@@ -31,9 +31,12 @@ struct TeleprompterOverlayView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Text(speechStatusLabel)
-                        .font(.caption)
-                        .foregroundStyle(speechStatusColor)
+                    if !speechStatusLabel.isEmpty {
+                        Text(speechStatusLabel)
+                            .font(.caption)
+                            .foregroundStyle(speechStatusColor)
+                    }
+
                 }
                 Spacer()
                 controlBar
@@ -87,8 +90,12 @@ struct TeleprompterOverlayView: View {
             }
 
             controlButton(
-                systemImage: appState.speechFollowController.isListening ? "waveform.circle.fill" : "waveform.circle",
-                label: appState.speechFollowController.isListening ? "Stop Voice Follow" : "Follow Voice"
+                systemImage: appState.speechFollowController.isListening
+                    ? "waveform.circle.fill"
+                    : "waveform.circle",
+                label: appState.speechFollowController.isListening
+                    ? "Stop Voice Follow"
+                    : "Follow Voice"
             ) {
                 appState.toggleVoiceFollow()
             }

@@ -4,7 +4,7 @@
 
 <h1 align="center">TelepromptMe</h1>
 
-TelepromptMe is a native macOS teleprompter built for people who speak to a camera. It keeps a script in a compact floating overlay near the camera and can follow along as you speak using on-device speech recognition.
+TelepromptMe is a native macOS teleprompter built for people who speak to a camera. It keeps a script in a compact floating overlay near the camera and scrolls it at a comfortable, adjustable pace.
 
 > [!IMPORTANT]
 > TelepromptMe is an early work in progress. The core workflow is usable, but the app is not yet ready for general distribution and interfaces may change without notice.
@@ -14,15 +14,15 @@ TelepromptMe is a native macOS teleprompter built for people who speak to a came
 - Create, edit, organize, favorite, and locally persist scripts.
 - Open a script in a floating overlay that stays available across spaces and fullscreen apps.
 - Play, pause, restart, and adjust automatic scrolling by words per minute.
-- Follow spoken progress with Apple Speech or a downloadable whisper.cpp model.
-- Customize overlay typography, line spacing, opacity, and global keyboard shortcuts.
-- Download and manage supported Whisper models from within the app.
+- Follow spoken progress using Apple's built-in on-device speech recognition.
+- Customize overlay typography, line spacing, and opacity.
+- Customize focused global shortcuts for overlay visibility, playback, and restart.
 
 For a more detailed implementation inventory, see [Current Functionality](docs/current-functionality.md).
 
 ## Project status
 
-The current focus is making speech-following faster and more reliable. In particular, matching spoken phrases back to the script, model lifecycle UX, first-run guidance, and distribution still need more work.
+The current focus is stabilizing the essential script-to-overlay journey, preventing data loss, and validating direct distribution.
 
 This repository is public as a build-in-public project: it shows the real implementation and its progress, not a finished product. Bug reports and thoughtful feedback are welcome, but there are currently no prebuilt releases or support guarantees.
 
@@ -31,16 +31,12 @@ This repository is public as a build-in-public project: it shows the real implem
 - An Apple silicon Mac
 - macOS 26 or later
 - Xcode 26 or later
-- CMake (required once to build the native whisper.cpp dependency)
 
 ## Build from source
-
-The generated whisper.cpp XCFramework is intentionally not committed. Build it before opening or compiling the app for the first time:
 
 ```bash
 git clone https://github.com/denyspupin/teleprompt-me.git
 cd teleprompt-me
-./scripts/build-whisper-cpp.sh
 open TelepromptMe.xcodeproj
 ```
 
@@ -53,21 +49,19 @@ xcodebuild -project TelepromptMe.xcodeproj \
   build
 ```
 
-The dependency build downloads a pinned revision of [whisper.cpp](https://github.com/ggml-org/whisper.cpp) and creates an Apple silicon XCFramework under the ignored `Vendor/` directory.
-
 ## Privacy
 
-Scripts and settings are stored locally. Speech audio is processed through the selected recognition engine; TelepromptMe supports Apple's built-in speech recognizer and local whisper.cpp models. The app requests microphone and speech-recognition permissions for voice follow, and network access is used to discover and download optional model files.
+Scripts and settings are stored locally. Voice follow uses Apple's on-device speech recognition and requires microphone and speech-recognition permission. The v1 app does not use third-party speech providers, downloadable models, or network access.
 
 ## Repository guide
 
 - `TelepromptMe/App` — app lifecycle and shared state
 - `TelepromptMe/Core` — persisted and domain models
 - `TelepromptMe/Features` — library, editor, overlay, and settings UI
-- `TelepromptMe/Shared/Services` — playback, persistence, shortcuts, and speech recognition
-- `TelepromptMeTests` — model catalog, engine routing, and transcription tests
+- `TelepromptMe/Shared/Services` — playback, persistence, overlay, shortcuts, and Apple voice follow
+- `TelepromptMeTests` — playback and script-library tests
 - `docs` — current capability and distribution notes
-- `scripts` — native dependency and packaging automation
+- `scripts` — packaging automation
 
 ## Contributing
 

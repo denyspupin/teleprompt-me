@@ -4,17 +4,10 @@ import Observation
 @MainActor
 @Observable
 final class PlaybackController {
-    enum State {
+    enum State: Equatable {
         case stopped
         case playing
         case paused
-    }
-
-    enum Mode: String, CaseIterable, Identifiable {
-        case autoScroll
-        case manualStep
-
-        var id: String { rawValue }
     }
 
     private enum Layout {
@@ -28,11 +21,8 @@ final class PlaybackController {
     }
 
     var state: State = .stopped
-    var mode: Mode = .autoScroll
     var speedWordsPerMinute: Double = 140
     var currentOffset: Double = 0
-    var stepUnitPoints: Double = 160
-    private(set) var isHoldScrolling = false
     private var maximumOffset: Double = 0
     private var followTargetOffset: Double?
     private var timer: Timer?
@@ -72,14 +62,6 @@ final class PlaybackController {
         }
     }
 
-    func stepForward() {
-        currentOffset = min(maximumOffset, currentOffset + stepUnitPoints)
-    }
-
-    func stepBackward() {
-        currentOffset = max(0, currentOffset - stepUnitPoints)
-    }
-
     func restartFromTop() {
         currentOffset = 0
         pause()
@@ -103,7 +85,6 @@ final class PlaybackController {
         if let followTargetOffset {
             self.followTargetOffset = min(followTargetOffset, maximumOffset)
         }
-
         if state == .playing && currentOffset >= maximumOffset {
             finishPlayback()
         }
@@ -111,32 +92,13 @@ final class PlaybackController {
 
     func follow(progress: Double) {
         let clampedProgress = min(1, max(0, progress))
-        let targetOffset = maximumOffset * clampedProgress
-        followTargetOffset = min(maximumOffset, max(currentOffset, targetOffset))
+        followTargetOffset = min(maximumOffset, max(currentOffset, maximumOffset * clampedProgress))
         lastTickDate = .now
         startTimerIfNeeded()
     }
 
     func stopFollowing() {
         followTargetOffset = nil
-
-        if state != .playing && !isHoldScrolling {
-            invalidateTimer()
-            lastTickDate = nil
-        }
-    }
-
-    func beginHoldScroll() {
-        guard !isHoldScrolling else { return }
-        isHoldScrolling = true
-        lastTickDate = .now
-        startTimerIfNeeded()
-    }
-
-    func endHoldScroll() {
-        guard isHoldScrolling else { return }
-        isHoldScrolling = false
-
         if state != .playing {
             invalidateTimer()
             lastTickDate = nil
@@ -166,7 +128,7 @@ final class PlaybackController {
     }
 
     private func tick() {
-        guard state == .playing || isHoldScrolling || followTargetOffset != nil else { return }
+        guard state == .playing || followTargetOffset != nil else { return }
 
         let now = Date()
         let elapsed = now.timeIntervalSince(lastTickDate ?? now)
@@ -174,7 +136,7 @@ final class PlaybackController {
 
         guard elapsed > 0 else { return }
 
-        if state == .playing || isHoldScrolling {
+        if state == .playing {
             let wordsPerSecond = speedWordsPerMinute / 60
             currentOffset = min(maximumOffset, currentOffset + (wordsPerSecond * Layout.pointsPerWord * elapsed))
         }
@@ -195,7 +157,7 @@ final class PlaybackController {
 
         if state == .playing && currentOffset >= maximumOffset {
             finishPlayback()
-        } else if state != .playing && !isHoldScrolling && followTargetOffset == nil {
+        } else if state != .playing && followTargetOffset == nil {
             invalidateTimer()
             lastTickDate = nil
         }

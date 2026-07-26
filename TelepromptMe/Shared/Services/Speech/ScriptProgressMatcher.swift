@@ -7,9 +7,8 @@ struct ScriptProgressMatch: Equatable {
 }
 
 final class ScriptProgressMatcher {
-    private struct Token: Equatable {
+    private struct Token {
         var value: String
-        var characterOffset: Int
     }
 
     private var scriptTokens: [Token] = []
@@ -23,6 +22,7 @@ final class ScriptProgressMatcher {
     }
 
     func reset() {
+        scriptTokens = []
         currentWordIndex = 0
         lastTranscriptTokenCount = 0
     }
@@ -33,13 +33,10 @@ final class ScriptProgressMatcher {
         let spoken = Self.tokenize(transcript).map(\.value)
         guard spoken.count >= 2 else { return nil }
 
-        let previousTranscriptTokenCount = lastTranscriptTokenCount
-        let newTokenCount = max(0, spoken.count - previousTranscriptTokenCount)
+        let newTokenCount = max(0, spoken.count - lastTranscriptTokenCount)
         lastTranscriptTokenCount = spoken.count
-
         let phraseLength = min(8, max(3, newTokenCount + 4))
         let phrase = Array(spoken.suffix(phraseLength))
-
         let searchStart = max(0, currentWordIndex - 6)
         let searchEnd = min(scriptTokens.count, currentWordIndex + 48)
         guard searchStart < searchEnd else { return nil }
@@ -50,14 +47,12 @@ final class ScriptProgressMatcher {
         let maxWindow = min(phrase.count + 2, searchEnd - searchStart)
 
         for index in searchStart..<searchEnd {
-            let remaining = searchEnd - index
-            let windowLength = min(maxWindow, remaining)
+            let windowLength = min(maxWindow, searchEnd - index)
             guard windowLength >= 2 else { continue }
 
             let scriptWindow = scriptTokens[index..<(index + windowLength)].map(\.value)
             let score = Self.similarity(spoken: phrase, script: scriptWindow)
-            let distancePenalty = Double(max(0, index - currentWordIndex)) * 0.006
-            let adjustedScore = score - distancePenalty
+            let adjustedScore = score - (Double(max(0, index - currentWordIndex)) * 0.006)
             if adjustedScore > bestScore {
                 bestScore = adjustedScore
                 bestRawScore = score
@@ -79,24 +74,27 @@ final class ScriptProgressMatcher {
 
     private static func tokenize(_ text: String) -> [Token] {
         var tokens: [Token] = []
-        text.enumerateSubstrings(in: text.startIndex..<text.endIndex, options: [.byWords, .localized]) { substring, range, _, _ in
+        text.enumerateSubstrings(
+            in: text.startIndex..<text.endIndex,
+            options: [.byWords, .localized]
+        ) { substring, _, _, _ in
             guard let substring else { return }
             let normalized = substring
                 .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
                 .lowercased()
-            let offset = text.distance(from: text.startIndex, to: range.lowerBound)
-            tokens.append(Token(value: normalized, characterOffset: offset))
+            tokens.append(Token(value: normalized))
         }
         return tokens
     }
 
     private static func similarity(spoken: [String], script: [String]) -> Double {
-        let rows = spoken.count + 1
-        let columns = script.count + 1
-        var scores = Array(repeating: Array(repeating: 0, count: columns), count: rows)
+        var scores = Array(
+            repeating: Array(repeating: 0, count: script.count + 1),
+            count: spoken.count + 1
+        )
 
-        for row in 1..<rows {
-            for column in 1..<columns {
+        for row in 1...spoken.count {
+            for column in 1...script.count {
                 if spoken[row - 1] == script[column - 1] {
                     scores[row][column] = scores[row - 1][column - 1] + 1
                 } else {

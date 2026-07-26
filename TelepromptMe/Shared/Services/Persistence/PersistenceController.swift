@@ -6,6 +6,7 @@ final class PersistenceController {
     static let shared = PersistenceController()
 
     let modelContainer: ModelContainer
+    let startupErrorMessage: String?
 
     private let schema = Schema([
         ScriptDocument.self,
@@ -14,6 +15,9 @@ final class PersistenceController {
     ])
 
     private init() {
+        var resolvedContainer: ModelContainer?
+        var startupError: String?
+
         do {
             let storeURL = try Self.makeStoreURL()
             let configuration = ModelConfiguration(
@@ -22,14 +26,32 @@ final class PersistenceController {
                 cloudKitDatabase: .none
             )
 
-            modelContainer = try ModelContainer(for: schema, configurations: [configuration])
-            try seedDefaultsIfNeeded(using: modelContainer.mainContext)
+            let container = try ModelContainer(for: schema, configurations: [configuration])
+            try Self.seedDefaultsIfNeeded(using: container.mainContext)
+            resolvedContainer = container
         } catch {
-            fatalError("Unable to initialize local persistence: \(error)")
+            startupError = error.localizedDescription
+            let fallbackConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            do {
+                let container = try ModelContainer(
+                    for: schema,
+                    configurations: [fallbackConfiguration]
+                )
+                try Self.seedDefaultsIfNeeded(using: container.mainContext)
+                resolvedContainer = container
+            } catch {
+                preconditionFailure("Unable to initialize recovery persistence: \(error)")
+            }
         }
+
+        guard let resolvedContainer else {
+            preconditionFailure("Persistence initialization completed without a model container.")
+        }
+        modelContainer = resolvedContainer
+        startupErrorMessage = startupError
     }
 
-    private func seedDefaultsIfNeeded(using context: ModelContext) throws {
+    private static func seedDefaultsIfNeeded(using context: ModelContext) throws {
         var descriptor = FetchDescriptor<AppSettings>()
         descriptor.fetchLimit = 1
 

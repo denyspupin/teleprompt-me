@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>TelepromptMe listens to your voice locally so the overlay can follow your script while you speak.</string>
+	<string>TelepromptMe listens locally so the teleprompter can follow your spoken script.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>TelepromptMe uses local speech recognition to transcribe your voice for script following.</string>
+	<string>TelepromptMe uses Apple's on-device speech recognition to follow your progress through a script.</string>
 </dict>
 </plist>

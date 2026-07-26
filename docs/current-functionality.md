@@ -1,93 +1,70 @@
 # Current Functionality
 
-This document describes the functionality currently implemented in TelepromptMe.
+TelepromptMe v1 is a focused, local macOS teleprompter.
 
 ## Script Library
 
 - Stores scripts locally with SwiftData.
-- Shows all scripts, favorite scripts, and scripts grouped by user-created collections.
-- Supports creating, renaming, and deleting collections.
-- Supports creating, editing, deleting, and favoriting scripts.
-- Autosaves script title and body changes while editing.
-- Tracks script word count, character count, and last-updated time in the editor.
-- Opens the selected script in the teleprompter overlay from the library.
-- Supports Apple Intelligence Writing Tools in the script editor on supported macOS versions.
+- Shows all scripts, favorites, and user-created collections.
+- Creates and edits script titles and bodies.
+- Autosaves edits and surfaces save failures.
+- Confirms script deletion.
+- Creates and renames collections.
+- Confirms collection deletion and preserves its scripts in All Scripts.
+- Tracks word count, character count, and last-updated time.
+- Opens the selected script in the teleprompter overlay.
+- Supports Writing Tools on supported macOS versions.
 
 ## Teleprompter Overlay
 
-- Presents a floating macOS overlay panel that can appear across spaces and fullscreen apps.
-- Positions the overlay near the top center of the primary display, under the camera area.
-- Shows the active script title, playback speed, and voice-follow status.
+- Presents a floating panel across Spaces and full-screen applications.
+- Positions the overlay below the camera area on the primary display.
 - Displays the active script in a clipped scrolling viewport.
-- Provides overlay controls for play or pause, restart from top, voice follow, and hide.
-- Applies user-configurable font, font size, line spacing, and overlay opacity.
-- Updates overlay content when the active script changes.
+- Provides play or pause, restart, and hide controls.
+- Applies the configured font, font size, line spacing, and opacity.
 
-## Playback
+## Autoplay
 
-- Scrolls the active script automatically at a configurable words-per-minute speed.
-- Supports play, pause, stop, restart from top, step forward, and step backward.
-- Supports temporary hold-to-scroll behavior while the overlay is visible.
-- Keeps playback within the measured script content bounds.
-- Smoothly advances the overlay to a matched script position during voice follow.
+- Scrolls at a configurable words-per-minute speed.
+- Supports play, pause, stop, and restart from the top.
+- Clamps speed and scroll position to supported bounds.
+- Stops cleanly at the end of the script.
 
 ## Voice Follow
 
-- Can listen to the user's speech and advance the teleprompter based on matched script progress.
-- Pauses normal auto-scroll when voice follow starts.
-- Uses configurable matching sensitivity.
-- Shows voice-follow states in the overlay: listening, following, finding place, or failure.
-- Falls back to the built-in Apple Speech recognizer when a selected local model is unavailable.
-- Can optionally start voice follow automatically when the overlay opens.
-
-## Speech Recognition Engines and Models
-
-- Includes an Apple built-in speech recognition option.
-- Includes a Whisper speech recognition path using a native whisper.cpp wrapper.
-- Captures microphone audio with `AVAudioEngine`.
-- Converts microphone buffers to 16 kHz mono floating-point PCM for Whisper transcription.
-- Runs Whisper transcription in process through the whisper.cpp C API.
-- Emits partial and final recognition results while listening.
-- Maintains a runtime-oriented speech model catalog.
-- Lists built-in and downloadable speech model descriptors.
-- Refreshes downloadable whisper.cpp model metadata from Hugging Face when available.
-- Supports downloading whisper.cpp model files with progress, cancellation, partial-file cleanup, and installation state tracking.
-- Supports deleting installed downloadable models.
-- Stores installed speech models and model manifests under the app's Application Support directory.
-- Filters language choices when the selected model declares supported languages.
+- Uses Apple's built-in on-device speech recognition.
+- Advances the active script by matching recognized phrases.
+- Pauses autoplay while listening.
+- Shows listening, following, finding-place, and failure states.
+- Supports language, matching-sensitivity, and automatic-start settings.
+- Stops listening when the overlay hides, playback starts, or the active script changes.
+- Does not include Whisper, downloadable models, third-party speech providers, or network access.
 
 ## Settings
 
-- Provides settings sections for General, AI Models, Appearance, and Shortcuts.
 - Configures autoplay speed.
-- Configures Dock icon, menu bar item, and default overlay positioning preferences.
-- Configures overlay typography and opacity.
-- Configures speech recognition engine, language, automatic voice follow, and matching sensitivity.
-- Shows available speech models with installed, downloading, failed, and recommended states.
-- Allows model download, cancellation, deletion, and selection.
-- Allows global keyboard shortcuts to be edited or cleared.
+- Configures Apple voice-follow language, matching sensitivity, and automatic start.
+- Configures font family, font size, line spacing, and overlay opacity.
+- Every visible setting has an implemented effect.
 
-## Global Shortcuts
+## Keyboard Control
 
-- Registers configurable global shortcuts for overlay and playback control.
-- Supports shortcut commands for showing or hiding the overlay, toggling playback, hold-to-scroll, stopping, restarting, increasing speed, decreasing speed, stepping forward, and stepping backward.
-- Supports modifier-only shortcuts for hold-to-scroll.
+- Registers global shortcuts for showing or hiding the overlay, toggling playback, and restarting.
+- Allows each v1 shortcut to be edited or cleared and applies changes immediately.
+- Prevents the same shortcut from being assigned to more than one action.
+- Keeps equivalent overlay controls and application menu commands available.
 
 ## Packaging and Distribution
 
-- Includes a macOS packaging script.
-- Includes a whisper.cpp build script that creates an Apple Silicon macOS XCFramework with Metal support.
-- Links the native whisper.cpp framework into the app target.
+- Targets macOS 26 or later on Apple Silicon.
+- Builds without a generated or vendored speech-recognition framework.
+- Supports unsigned tester packages and Developer ID distribution.
+- Supports notarization and stapling.
 
 ## Tests
 
-- Covers speech model catalog behavior.
-- Covers speech recognition engine factory routing.
-- Covers Whisper transcriber behavior.
-
-## Known Gaps
-
-- There is no prebuilt public release or automated release pipeline yet.
-- A fresh clone needs the generated whisper.cpp XCFramework before it can build.
-- Speech-follow accuracy and responsiveness are still being tuned.
-- First-run onboarding, accessibility review, and broader real-world testing are still in progress.
+- Covers autoplay state and speed behavior.
+- Covers script persistence and deletion.
+- Covers non-destructive collection deletion.
+- Covers shortcut defaults, customization, clearing, and persistence.
+- Covers script-progress matching and rejection of unrelated speech.
